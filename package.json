@@ -1,0 +1,12 @@
+{
+  "name": "deployserver",
+  "version": "1.0.0",
+  "description": "Serveur de déploiment automatique GitHub",
+  "main": "index.js",
+  "author": "Raraph84",
+  "license": "ISC",
+  "dependencies": {
+    "raraph84-lib": "^2.2.0",
+    "ws": "^8.6.0"
+  }
+}
