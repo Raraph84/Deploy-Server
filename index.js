@@ -3,7 +3,7 @@ const { exec } = require("child_process");
 if (process.argv.length === 3 && process.argv[2].toLowerCase() === "deployall") {
 
     console.log("Déploiement de tous les serveurs...");
-    require("./repos.json").forEach((repo) => {
+    require("./config.json").repos.forEach((repo) => {
         let command;
         if (repo.type === "nodeServer")
             command = `${__dirname}/deployNodeServer.sh ${repo.fullname} ${repo.githubLogin}`;

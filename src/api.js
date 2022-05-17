@@ -23,7 +23,7 @@ module.exports.start = () => {
 
         let repos;
         try {
-            repos = JSON.parse(Fs.readFileSync(`${__dirname}/../repos.json`));
+            repos = JSON.parse(Fs.readFileSync(`${__dirname}/../config.json`)).repos;
         } catch (error) {
             request.end(500, "Internal server error");
             return;

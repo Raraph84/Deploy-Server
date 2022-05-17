@@ -1,5 +1,6 @@
 const Fs = require("fs");
 const { WebSocketServer } = require("ws");
+const Config = require("../config.json");
 
 module.exports.start = () => {
 
@@ -40,7 +41,7 @@ module.exports.start = () => {
                     return;
                 }
 
-                if (message.token !== "59Ykw7UwHDSlcEUSwgnezTgvuii0QMQUDe3HGG5A") {
+                if (message.token !== Config.token) {
                     socket.close(1000, "Invalid token");
                     return;
                 }
