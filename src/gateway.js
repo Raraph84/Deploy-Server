@@ -80,7 +80,7 @@ module.exports.start = () => {
             while (lastLogs.length < newLogs.length) {
                 const newLine = newLogs[newLogs.length - (newLogs.length - lastLogs.length)];
                 lastLogs.push(newLine);
-                server.clients.forEach((socket) => socket.infos.connected ? socket.send(JSON.stringify({ event: "LOG", serverId: serverInfos.id, line: newLine })) : null);
+                server.clients.forEach((socket) => socket.infos.connected ? socket.send(JSON.stringify({ event: "LOG", serverId: serverInfos.id, logs: [newLine] })) : null);
             }
         });
 
