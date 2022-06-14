@@ -6,7 +6,6 @@
   "author": "Raraph84",
   "license": "ISC",
   "dependencies": {
-    "raraph84-lib": "^2.2.0",
-    "ws": "^8.6.0"
+    "raraph84-lib": "^2.7.0"
   }
 }

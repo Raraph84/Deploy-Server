@@ -1,9 +1,10 @@
 const { exec } = require("child_process");
+const { getConfig } = require("raraph84-lib");
 
 if (process.argv.length === 3 && process.argv[2].toLowerCase() === "deployall") {
 
     console.log("Déploiement de tous les serveurs...");
-    require("./config.json").repos.forEach((repo) => {
+    getConfig(__dirname).repos.forEach((repo) => {
         let command;
         if (repo.type === "nodeServer")
             command = `${__dirname}/deployNodeServer.sh ${repo.fullname} ${repo.githubLogin}`;
@@ -11,7 +12,8 @@ if (process.argv.length === 3 && process.argv[2].toLowerCase() === "deployall") 
             command = `${__dirname}/deployDockerNodeServer.sh ${repo.fullname} ${repo.githubLogin}`;
         else if (repo.type === "website")
             command = `${__dirname}/deployWebsite.sh ${repo.fullname} ${repo.githubLogin}`;
-        else return;
+        else
+            return;
         exec(command).on("close", () => console.log("Deployed " + repo.fullname));
     });
 

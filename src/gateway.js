@@ -1,60 +1,53 @@
 const Fs = require("fs");
-const { WebSocketServer } = require("ws");
-const Config = require("../config.json");
+const { WebSocketServer, getConfig } = require("raraph84-lib");
+const Config = getConfig(__dirname + "/..");
 
 module.exports.start = () => {
 
     const servers = [];
 
-    console.log("Lancement du serveur WebSocket...");
-    const server = new WebSocketServer({ port: 8002 });
-    server.on("listening", () => console.log("Serveur WebSocket lancé sur le port 8002 !"));
-
-    server.on("connection", (socket) => {
-
-        socket.infos = { connected: false };
-
+    const gateway = new WebSocketServer();
+    gateway.on("connection", (/** @type {import("raraph84-lib/src/WebSocketClient")} */ client) => {
         setTimeout(() => {
-            if (!socket.infos.connected)
-                socket.close(1000, "Please login");
-        }, 10000);
+            if (!client.infos.logged)
+                client.close("Please login");
+        }, 10 * 1000);
+    });
+    gateway.on("command", (command, /** @type {import("raraph84-lib/src/WebSocketClient")} */ client, message) => {
 
-        socket.on("message", (data) => {
+        if (command === "LOGIN") {
 
-            let message;
-            try {
-                message = JSON.parse(data);
-            } catch (error) {
-                socket.close(1000, "Invalid JSON");
+            if (client.infos.logged) {
+                client.close("You are already logged in");
                 return;
             }
 
-            if (!message.command) {
-                socket.close(1000, "Missing command");
+            if (typeof message.token === "undefined") {
+                client.close("Missing token");
                 return;
             }
 
-            if (message.command.toUpperCase() === "LOGIN") {
-
-                if (!message.token) {
-                    socket.close(1000, "Missing token");
-                    return;
-                }
-
-                if (message.token !== Config.token) {
-                    socket.close(1000, "Invalid token");
-                    return;
-                }
-
-                socket.infos.connected = true;
-                socket.send(JSON.stringify({ event: "CONNECTED" }));
-
-                servers.forEach((server) => {
-                    socket.send(JSON.stringify({ event: "SERVER", name: server.name, id: server.id }));
-                    socket.send(JSON.stringify({ event: "LOG", serverId: server.id, logs: server.lastLogs }));
-                });
+            if (typeof message.token !== "string") {
+                client.close("Token must be a string");
+                return;
             }
-        });
+
+            if (message.token !== Config.token) {
+                client.close("Invalid token");
+                return;
+            }
+
+            client.infos.logged = true;
+
+            client.emitEvent("CONNECTED");
+
+            servers.forEach((server) => {
+                client.emitEvent("SERVER", { name: server.name, id: server.id });
+                client.emitEvent("LOG", { serverId: server.id, logs: server.lastLogs });
+            });
+
+        } else
+            client.close("Command not found");
     });
 
     setInterval(() => {
@@ -66,7 +59,7 @@ module.exports.start = () => {
             if (!serverInfos) {
                 const id = servers.length;
                 servers.push({ name: serverName, id: id, lastLogs: [] });
-                server.clients.forEach((socket) => socket.infos.connected ? socket.send(JSON.stringify({ event: "SERVER", name: serverName, id: id })) : null);
+                gateway.clients.filter((client) => client.infos.logged).forEach((client) => client.emitEvent("SERVER", { name: serverName, id: id }));
                 return;
             }
 
@@ -81,9 +74,12 @@ module.exports.start = () => {
             while (lastLogs.length < newLogs.length) {
                 const newLine = newLogs[newLogs.length - (newLogs.length - lastLogs.length)];
                 lastLogs.push(newLine);
-                server.clients.forEach((socket) => socket.infos.connected ? socket.send(JSON.stringify({ event: "LOG", serverId: serverInfos.id, logs: [newLine] })) : null);
+                gateway.clients.filter((client) => client.infos.logged).forEach((client) => client.emitEvent("LOG", { serverId: serverInfos.id, logs: [newLine] }));
             }
         });
 
     }, 500);
+
+    console.log("Lancement du serveur WebSocket...");
+    gateway.listen(Config.gatewayPort).then(() => console.log("Serveur WebSocket lancé sur le port " + Config.gatewayPort + " !"));
 }

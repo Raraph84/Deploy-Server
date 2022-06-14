@@ -1,6 +1,7 @@
 const Fs = require("fs");
 const { exec } = require("child_process");
-const { HttpServer } = require("raraph84-lib");
+const { HttpServer, getConfig } = require("raraph84-lib");
+const Config = getConfig(__dirname + "/..");
 
 module.exports.start = () => {
 
@@ -23,7 +24,7 @@ module.exports.start = () => {
 
         let repos;
         try {
-            repos = JSON.parse(Fs.readFileSync(`${__dirname}/../config.json`)).repos;
+            repos = JSON.parse(Fs.readFileSync(__dirname + "/../config.json")).repos;
         } catch (error) {
             request.end(500, "Internal server error");
             return;
@@ -42,7 +43,8 @@ module.exports.start = () => {
             command = `${__dirname}/../deployDockerNodeServer.sh ${repo.fullname} ${repo.githubLogin}`;
         else if (repo.type === "website")
             command = `${__dirname}/../deployWebsite.sh ${repo.fullname} ${repo.githubLogin}`;
-        else return;
+        else
+            return;
 
         console.log("Deploying " + repo.fullname + " with " + command + "...");
         exec(command);
@@ -50,5 +52,5 @@ module.exports.start = () => {
     });
 
     console.log("Lancement du serveur HTTP...");
-    api.listen(8001).then(() => console.log("Serveur HTTP lancé sur le port 8001 !"));
+    api.listen(Config.apiPort).then(() => console.log("Serveur HTTP lancé sur le port " + Config.apiPort + " !"));
 }
