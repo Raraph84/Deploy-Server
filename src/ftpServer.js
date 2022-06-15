@@ -1,4 +1,4 @@
-const { default: FtpServer } = require("ftp-srv");
+const FtpServer = require("ftp-srv");
 const { GeneralError } = require("ftp-srv/src/errors");
 const { getConfig } = require("raraph84-lib");
 const Config = getConfig(__dirname + "/..");
