@@ -38,8 +38,7 @@ module.exports.start = () => {
             }
 
             client.infos.logged = true;
-
-            client.emitEvent("CONNECTED");
+            client.emitEvent("LOGGED");
 
             servers.forEach((server) => {
                 client.emitEvent("SERVER", { name: server.name, id: server.id });

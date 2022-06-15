@@ -3,3 +3,4 @@ logs/
 temp/
 package-lock.json
 config.json
+deploy.bat
