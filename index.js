@@ -20,4 +20,5 @@ if (process.argv.length === 3 && process.argv[2].toLowerCase() === "deployall") 
 } else {
     require("./src/api").start();
     require("./src/gateway").start();
+    require("./src/ftpServer").start();
 }
