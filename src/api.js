@@ -6,7 +6,6 @@ const Config = getConfig(__dirname + "/..");
 module.exports.start = () => {
 
     const api = new HttpServer();
-
     api.on("request", (/** @type {import("raraph84-lib/src/Request")} */ request) => {
 
         let message;

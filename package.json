@@ -7,6 +7,6 @@
   "license": "ISC",
   "dependencies": {
     "ftp-srv": "^4.6.1",
-    "raraph84-lib": "^2.7.0"
+    "raraph84-lib": "^2.9.2"
   }
 }

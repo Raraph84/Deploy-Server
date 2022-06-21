@@ -1,5 +1,5 @@
 const Fs = require("fs");
-const { WebSocketServer, getConfig } = require("raraph84-lib");
+const { WebSocketServer, getConfig, DockerAllLogsListener } = require("raraph84-lib");
 const Config = getConfig(__dirname + "/..");
 
 module.exports.start = () => {
@@ -49,6 +49,9 @@ module.exports.start = () => {
             client.close("Command not found");
     });
 
+    console.log("Lancement du serveur WebSocket...");
+    gateway.listen(Config.gatewayPort).then(() => console.log("Serveur WebSocket lancé sur le port " + Config.gatewayPort + " !"));
+
     setInterval(() => {
 
         Fs.readdirSync(`${__dirname}/../logs/`).forEach((serverName) => {
@@ -72,13 +75,39 @@ module.exports.start = () => {
 
             while (lastLogs.length < newLogs.length) {
                 const newLine = newLogs[newLogs.length - (newLogs.length - lastLogs.length)];
-                lastLogs.push(newLine);
-                gateway.clients.filter((client) => client.infos.logged).forEach((client) => client.emitEvent("LOG", { serverId: serverInfos.id, logs: [newLine] }));
+                const log = { line: newLine, date: Date.now() };
+                lastLogs.push(log);
+                gateway.clients.filter((client) => client.infos.logged).forEach((client) => client.emitEvent("LOG", { serverId: serverInfos.id, logs: [log] }));
             }
         });
 
     }, 500);
 
-    console.log("Lancement du serveur WebSocket...");
-    gateway.listen(Config.gatewayPort).then(() => console.log("Serveur WebSocket lancé sur le port " + Config.gatewayPort + " !"));
+    const dockerContainersCache = [];
+
+    const logsListener = new DockerAllLogsListener();
+    logsListener.on("output", async (/** @type {import("dockerode").Container} */ container, output, date) => {
+
+        if (!dockerContainersCache.some((cachedContainer) => cachedContainer.id === container.id)) {
+            const serverName = (await container.inspect()).Name.slice(1);
+            if (!dockerContainersCache.some((cachedContainer) => cachedContainer.id === container.id))
+                dockerContainersCache.push({ id: container.id, name: serverName });
+        }
+
+        const serverName = dockerContainersCache.find((cachedContainer) => cachedContainer.id === container.id).name;
+
+        if (!servers.some((server) => server.name === serverName)) {
+            const id = servers.length;
+            servers.push({ name: serverName, id: id, lastLogs: [] });
+            gateway.clients.filter((client) => client.infos.logged).forEach((client) => client.emitEvent("SERVER", { name: serverName, id: id }));
+        }
+
+        const server = servers.find((server) => server.name === serverName);
+        const log = { line: output.replace(/\x1B[[(?);]{0,2}(;?\d)*./g, ""), date: date.getTime() };
+
+        server.lastLogs.push(log);
+        gateway.clients.filter((client) => client.infos.logged).forEach((client) => client.emitEvent("LOG", { serverId: server.id, logs: [log] }));
+    });
+
+    logsListener.listen();
 }
