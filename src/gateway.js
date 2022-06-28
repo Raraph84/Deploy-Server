@@ -1,9 +1,11 @@
+const Docker = require("dockerode");
 const Fs = require("fs");
-const { WebSocketServer, getConfig, DockerAllLogsListener } = require("raraph84-lib");
+const { WebSocketServer, getConfig, DockerEventListener, DockerLogsListener } = require("raraph84-lib");
 const Config = getConfig(__dirname + "/..");
 
 module.exports.start = () => {
 
+    /** @type {Server[]} */
     const servers = [];
 
     const gateway = new WebSocketServer();
@@ -83,31 +85,80 @@ module.exports.start = () => {
 
     }, 500);
 
-    const dockerContainersCache = [];
+    const docker = new Docker();
 
-    const logsListener = new DockerAllLogsListener();
-    logsListener.on("output", async (/** @type {import("dockerode").Container} */ container, output, date) => {
+    const eventListener = new DockerEventListener(docker);
+    eventListener.on("rawEvent", (event) => {
 
-        if (!dockerContainersCache.some((cachedContainer) => cachedContainer.id === container.id)) {
-            const serverName = (await container.inspect()).Name.slice(1);
-            if (!dockerContainersCache.some((cachedContainer) => cachedContainer.id === container.id))
-                dockerContainersCache.push({ id: container.id, name: serverName });
+        if (event.Type !== "container") return;
+
+        const container = docker.getContainer(event.id);
+        const name = event.Actor.Attributes.name.replace(/[^A-Za-z0-9]/g, "-");
+
+        if (event.Action === "start") {
+
+            const server = servers.find((server) => server.name === name) || new Server(container, name);
+
+            server.log("[raraph.fr] Starting...", Math.floor(event.timeNano / 1000000));
+            server.listenLogs();
+            server.state === "running";
+
+        } else if (event.Action === "die") {
+
+            const server = servers.find((server) => server.name === name);
+
+            server.logsListener.close();
+
+            if (server.state === "running") {
+                server.log("[raraph.fr] Process exited with code " + event.Actor.Attributes.exitCode + ". Restarting in 3 seconds...", Math.floor(event.timeNano / 1000000));
+                server.state === "restarting";
+                setTimeout(() => container.start().catch(() => { }), 3000);
+            }
         }
-
-        const serverName = dockerContainersCache.find((cachedContainer) => cachedContainer.id === container.id).name;
-
-        if (!servers.some((server) => server.name === serverName)) {
-            const id = servers.length;
-            servers.push({ name: serverName, id: id, lastLogs: [] });
-            gateway.clients.filter((client) => client.infos.logged).forEach((client) => client.emitEvent("SERVER", { name: serverName, id: id }));
-        }
-
-        const server = servers.find((server) => server.name === serverName);
-        const log = { line: output.replace(/\x1B[[(?);]{0,2}(;?\d)*./g, ""), date: date.getTime() };
-
-        server.lastLogs.push(log);
-        gateway.clients.filter((client) => client.infos.logged).forEach((client) => client.emitEvent("LOG", { serverId: server.id, logs: [log] }));
     });
 
-    logsListener.listen();
+    eventListener.listen();
+
+    docker.listContainers().then((containers) => containers.forEach((container) => {
+
+        const name = container.Names[0].slice(1).replace(/[^A-Za-z0-9]/g, "-");
+
+        new Server(docker.getContainer(container.Id), name).listenLogs();
+    }));
+
+    class Server {
+
+        /**
+         * @param {import("dockerode").Container} container 
+         * @param {string} name 
+         */
+        constructor(container, name) {
+
+            this.id = servers.length;
+            this.name = name;
+            this.lastLogs = [];
+            this.state = "running";
+            this.container = container;
+            this.logsListener = null;
+
+            servers.push(this);
+
+            gateway.clients.filter((client) => client.infos.logged).forEach((client) => client.emitEvent("SERVER", { name: this.name, id: this.id }));
+        }
+
+        log(line, date) {
+            const log = { line, date };
+            this.lastLogs.push(log);
+            gateway.clients.filter((client) => client.infos.logged).forEach((client) => client.emitEvent("LOG", { serverId: this.id, logs: [log] }));
+        }
+
+        listenLogs() {
+
+            this.logsListener = new DockerLogsListener(this.container);
+            this.logsListener.on("output", (output, date) => {
+                this.log(output.replace(/\x1B[[(?);]{0,2}(;?\d)*./g, ""), date.getTime());
+            });
+            this.logsListener.listen();
+        }
+    }
 }
