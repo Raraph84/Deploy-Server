@@ -67,6 +67,7 @@ class Server {
                             NetworkMode: "host"
                         },
                         WorkingDir: "/server",
+                        Env: ["TZ=Europe/Paris"],
                         Image: "node:r18",
                         Cmd: "index.js"
                     });
