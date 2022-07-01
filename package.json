@@ -6,6 +6,7 @@
   "author": "Raraph84",
   "license": "ISC",
   "dependencies": {
+    "dockerode": "^3.3.2",
     "ftp-srv": "^4.6.1",
     "raraph84-lib": "^2.9.2"
   }

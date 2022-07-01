@@ -1,19 +1,13 @@
 #!/bin/bash
 
-startTime=$(date +%s%N | cut -b1-13)
-
-if [ "$#" -ne 2 ]; then
+if [ "$#" -ne 3 ]; then
     echo "Invalid number of parameters"
     exit
 fi
 
-SPLIT_REPOSITORY=(${1//\// })
-USER=${SPLIT_REPOSITORY[0]}
-REPO=${SPLIT_REPOSITORY[1]}
-GITHUB=https://$2@github.com/$USER/$REPO
-
-TEMPFOLDER=~/deployServer/temp/$REPO
-SERVERFOLDER=~/nodeServers/$REPO
+GITHUB=https://$3@github.com/$2
+TEMPFOLDER=~/deployServer/temp/$1
+SERVERFOLDER=~/nodeServers/$1
 
 git clone $GITHUB $TEMPFOLDER
 
@@ -30,11 +24,5 @@ if [ -e $TEMPFOLDER/package.json ]; then
     fi
 fi
 
-docker kill $REPO
-
 rm -rf $SERVERFOLDER
 mv $TEMPFOLDER $SERVERFOLDER
-
-docker start $REPO
-
-echo "Déployé en" $((($(date +%s%N | cut -b1-13) - $startTime) / 1000)) "secondes"

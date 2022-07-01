@@ -1,6 +1,7 @@
 const Fs = require("fs");
 const { exec } = require("child_process");
 const { HttpServer, getConfig } = require("raraph84-lib");
+const { Server, NodeJsServer, WebsiteServer } = require("./Server");
 const Config = getConfig(__dirname + "/..");
 
 module.exports.start = () => {
@@ -21,32 +22,14 @@ module.exports.start = () => {
             return;
         }
 
-        let repos;
-        try {
-            repos = JSON.parse(Fs.readFileSync(__dirname + "/../config.json")).repos;
-        } catch (error) {
-            request.end(500, "Internal server error");
-            return;
-        }
-
-        const repo = repos.find((repo) => repo.fullname === message.repository.full_name);
-        if (!repo) {
+        const server = Server.servers.find((server) => (server instanceof NodeJsServer || server instanceof WebsiteServer)
+            && server.githubRepo === message.repository.full_name);
+        if (!server) {
             request.end(401, "Repository not authorized");
             return;
         }
 
-        let command;
-        if (repo.type === "nodeServer")
-            command = `${__dirname}/../deployNodeServer.sh ${repo.fullname} ${repo.githubLogin}`;
-        else if (repo.type === "dockerNodeServer")
-            command = `${__dirname}/../deployDockerNodeServer.sh ${repo.fullname} ${repo.githubLogin}`;
-        else if (repo.type === "website")
-            command = `${__dirname}/../deployWebsite.sh ${repo.fullname} ${repo.githubLogin}`;
-        else
-            return;
-
-        console.log("Deploying " + repo.fullname + " with " + command + "...");
-        exec(command);
+        server.deploy();
         request.end(204);
     });
 
