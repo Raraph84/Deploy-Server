@@ -19,7 +19,7 @@ module.exports.start = () => {
 
             server.log("[raraph.fr] Starting...", Math.floor(event.timeNano / 1000000));
             server.listenLogs();
-            server.state === "running";
+            server.state = "running";
 
         } else if (event.Action === "die") {
 
@@ -27,7 +27,7 @@ module.exports.start = () => {
 
             if (server.state === "running") {
                 server.log("[raraph.fr] Process exited with code " + event.Actor.Attributes.exitCode + ". Restarting in 3 seconds...", Math.floor(event.timeNano / 1000000));
-                server.state === "restarting";
+                server.state = "restarting";
                 setTimeout(() => server.container.start().catch(() => { }), 3000);
             }
         }
