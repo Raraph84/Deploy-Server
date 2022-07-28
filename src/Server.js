@@ -1,7 +1,7 @@
 const { exec } = require("child_process");
 const { mkdirSync, existsSync } = require("fs");
-const Docker = require("dockerode");
 const { getConfig, DockerLogsListener } = require("raraph84-lib");
+const Docker = require("dockerode");
 const Config = getConfig(__dirname + "/..");
 
 class Server {
