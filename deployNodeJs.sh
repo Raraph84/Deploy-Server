@@ -8,6 +8,7 @@ fi
 GITHUB=https://$3@github.com/$2
 TEMPFOLDER=~/deployServer/temp/$1
 SERVERFOLDER=~/nodeServers/$1
+IFS=':' && read -ra IGNOREDFILES <<< $4 && IFS=' '
 
 git clone $GITHUB $TEMPFOLDER
 
@@ -23,6 +24,13 @@ if [ -e $TEMPFOLDER/package.json ]; then
         npm install --production
     fi
 fi
+
+for IGNOREDFILE in "${IGNOREDFILES[@]}"; do
+    if [ -e $TEMPFOLDER/$IGNOREDFILE ]; then
+        rm -rf $TEMPFOLDER/$IGNOREDFILE
+        cp -r $SERVERFOLDER/$IGNOREDFILE $TEMPFOLDER
+    fi
+done
 
 rm -rf $SERVERFOLDER
 mv $TEMPFOLDER $SERVERFOLDER

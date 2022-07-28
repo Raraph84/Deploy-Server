@@ -37,7 +37,7 @@ class Server {
 
                 if (container) {
 
-                    const server = new NodeJsServer(name, docker.getContainer(container.Id), repo.fullname, repo.githubLogin);
+                    const server = new NodeJsServer(name, docker.getContainer(container.Id), repo.fullname, repo.githubLogin, repo.deployIgnoredFiles || []);
 
                     if (container.State === "running") {
                         server.listenLogs();
@@ -64,15 +64,25 @@ class Server {
                                     Type: "bind"
                                 }
                             ],
-                            NetworkMode: "host"
+                            NetworkMode: "host",
+                            LogConfig: {
+                                Type: "json-file",
+                                Config: {
+                                    "max-size": "5m",
+                                    "max-file": "2"
+                                }
+                            }
                         },
                         WorkingDir: "/server",
-                        Env: ["TZ=Europe/Paris"],
+                        Env: [
+                            "TZ=Europe/Paris",
+                            ...Object.entries(repo.environmentVariables || {}).map((environmentVariable) => environmentVariable[0] + "=" + environmentVariable[1])
+                        ],
                         Image: "node:r18",
                         Cmd: "index.js"
                     });
 
-                    const server = new NodeJsServer(name, container, repo.fullname, repo.githubLogin);
+                    const server = new NodeJsServer(name, container, repo.fullname, repo.githubLogin, repo.deployIgnoredFiles || []);
 
                     server.deploy();
                 }
@@ -113,8 +123,9 @@ class NodeJsServer extends Server {
      * @param {import("dockerode").Container} container 
      * @param {String} githubRepo 
      * @param {String} githubAuth 
+     * @param {String[]} deployIgnoredFiles 
      */
-    constructor(name, container, githubRepo, githubAuth) {
+    constructor(name, container, githubRepo, githubAuth, deployIgnoredFiles) {
 
         super(name, "nodejs");
 
@@ -122,6 +133,7 @@ class NodeJsServer extends Server {
         this.container = container;
         this.githubRepo = githubRepo;
         this.githubAuth = githubAuth;
+        this.deployIgnoredFiles = deployIgnoredFiles;
         this.logsListener = null;
         this.state = "stopped";
 
@@ -150,7 +162,7 @@ class NodeJsServer extends Server {
         } catch (error) {
         }
         this.lastLogs = [];
-        const command = `${__dirname}/../deployNodeJs.sh ${this.name} ${this.githubRepo} ${this.githubAuth}`;
+        const command = `${__dirname}/../deployNodeJs.sh ${this.name} ${this.githubRepo} ${this.githubAuth} ${this.deployIgnoredFiles.join(":")}`;
         exec(command).on("close", async () => {
             await this.container.start();
             console.log("Deployed " + this.githubRepo + " with command " + command);
