@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ "$#" -ne 3 ]; then
+if [ "$#" -ne 3 ] && [ "$#" -ne 4 ]; then
     echo "Invalid number of parameters"
     exit
 fi
@@ -26,7 +26,7 @@ if [ -e $TEMPFOLDER/package.json ]; then
 fi
 
 for IGNOREDFILE in "${IGNOREDFILES[@]}"; do
-    if [ -e $TEMPFOLDER/$IGNOREDFILE ]; then
+    if [ -e $SERVERFOLDER/$IGNOREDFILE ]; then
         rm -rf $TEMPFOLDER/$IGNOREDFILE
         cp -r $SERVERFOLDER/$IGNOREDFILE $TEMPFOLDER
     fi
