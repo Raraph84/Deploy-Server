@@ -43,7 +43,7 @@ class Server {
                         server.listenLogs();
                         server.state = "running";
                     } else {
-                        server.container.start();
+                        server.deploy();
                     }
 
                 } else {
@@ -78,18 +78,18 @@ class Server {
                             "TZ=Europe/Paris",
                             ...Object.entries(repo.environmentVariables || {}).map((environmentVariable) => environmentVariable[0] + "=" + environmentVariable[1])
                         ],
-                        Image: "node:r18",
+                        Image: "node:r" + repo.nodeVersion,
                         Cmd: "index.js"
                     });
 
                     const server = new NodeJsServer(name, container, repo.fullname, repo.githubLogin, repo.deployIgnoredFiles || []);
-
                     server.deploy();
                 }
 
             } else if (repo.type === "website") {
 
-                new WebsiteServer(name, repo.fullname, repo.githubLogin);
+                const server = new WebsiteServer(name, repo.fullname, repo.githubLogin);
+                server.deploy();
             }
         }
     }
@@ -151,7 +151,11 @@ class NodeJsServer extends Server {
         this.logsListener.on("output", (output, date) => {
             this.log(output.replace(/\x1B[[(?);]{0,2}(;?\d)*./g, ""), date.getTime());
         });
-        this.logsListener.listen();
+        this.container.inspect().then((infos) => {
+            const startDate = new Date(infos.State.StartedAt).getTime();
+            this.log("[raraph.fr] Starting...", startDate);
+            this.logsListener.listen(startDate);
+        });
     }
 
     async deploy() {

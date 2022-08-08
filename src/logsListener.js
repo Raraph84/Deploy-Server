@@ -17,7 +17,6 @@ module.exports.start = () => {
 
         if (event.Action === "start") {
 
-            server.log("[raraph.fr] Starting...", Math.floor(event.timeNano / 1000000));
             server.listenLogs();
             server.state = "running";
 
