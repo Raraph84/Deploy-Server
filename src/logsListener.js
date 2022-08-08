@@ -27,7 +27,9 @@ module.exports.start = () => {
             if (server.state === "running") {
                 server.log("[raraph.fr] Process exited with code " + event.Actor.Attributes.exitCode + ". Restarting in 3 seconds...", Math.floor(event.timeNano / 1000000));
                 server.state = "restarting";
-                setTimeout(() => server.container.start().catch(() => { }), 3000);
+                setTimeout(() => {
+                    if (server.state === "restarting") server.container.start().catch(() => { });
+                }, 3000);
             }
         }
     });
