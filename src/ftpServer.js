@@ -17,7 +17,7 @@ module.exports.start = () => {
     console.log("Lancement du serveur FTP...");
     const ftpServer = new FtpSrv({
         log: createLogger({ name: "ftp-srv", stream: new Logger() }),
-        url: "ftp://0.0.0.0:" + Config.ftpPort,
+        url: "ftp://[::]:" + Config.ftpPort,
         pasv_url: Config.ftpPassiveUrl,
         pasv_min: Config.ftpPassiveMinPort,
         pasv_max: Config.ftpPassiveMaxPort
