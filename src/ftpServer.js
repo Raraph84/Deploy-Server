@@ -1,14 +1,23 @@
+const { default: fetch } = require("node-fetch");
 const { createLogger } = require("bunyan");
 const { FtpSrv, ftpErrors } = require("ftp-srv");
 const { getConfig } = require("raraph84-lib");
 const Config = getConfig(__dirname + "/..");
 
-module.exports.start = () => {
+module.exports.start = async () => {
+
+    let passiveUrl;
+    while (!passiveUrl) {
+        try {
+            const res = await fetch("https://ipv4.lafibre.info/ip.php");
+            passiveUrl = await res.text();
+        } catch (err) {
+        }
+    }
 
     class Logger {
         write(data) {
             data = JSON.parse(data);
-
             if (data.msg === "Listening")
                 console.log("Serveur FTP lancé sur le port " + data.port);
         }
@@ -18,7 +27,7 @@ module.exports.start = () => {
     const ftpServer = new FtpSrv({
         log: createLogger({ name: "ftp-srv", stream: new Logger() }),
         url: "ftp://[::]:" + Config.ftpPort,
-        pasv_url: Config.ftpPassiveUrl,
+        pasv_url: passiveUrl,
         pasv_min: Config.ftpPassiveMinPort,
         pasv_max: Config.ftpPassiveMaxPort
     });

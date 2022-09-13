@@ -78,7 +78,7 @@ class Server {
                             "TZ=Europe/Paris",
                             ...Object.entries(repo.environmentVariables || {}).map((environmentVariable) => environmentVariable[0] + "=" + environmentVariable[1])
                         ],
-                        Image: "node:r" + repo.nodeVersion,
+                        Image: repo.dockerImage,
                         Cmd: "index.js"
                     });
 

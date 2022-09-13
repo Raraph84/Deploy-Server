@@ -1,0 +1,30 @@
+{
+    "token": "A_RANDOM_TOKEN_FOR_THE_PANEL",
+    "apiPort": 8001,
+    "gatewayPort": 8002,
+    "ftpPort": 2121,
+    "ftpCredentials": {
+        "myUser": {
+            "password": "myPassword",
+            "root": "/home/me/websites/myWebsite"
+        }
+    },
+    "ftpPassiveMinPort": 21000,
+    "ftpPassiveMaxPort": 21010,
+    "repos": [
+        {
+            "fullname": "MyGitHubUser/MyNodeJsRepo",
+            "githubLogin": "ghp_MY_GITHUB_ACCESS_TOKEN",
+            "type": "nodejs",
+            "dockerImage": "node:r18",
+            "deployIgnoredFiles": [
+                "myFileOrFolderThatWillBeNotErasedOnDeploy.txt"
+            ]
+        },
+        {
+            "fullname": "Raraph84/MyWebsiteRepo",
+            "githubLogin": "ghp_MY_GITHUB_ACCESS_TOKEN",
+            "type": "website"
+        }
+    ]
+}
