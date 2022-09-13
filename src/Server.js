@@ -81,7 +81,7 @@ class Server {
 
             } else if (repo.type === "website") {
 
-                const server = new WebsiteServer(name, repo.fullname, repo.githubLogin);
+                const server = new WebsiteServer(name, repo.fullname, repo.githubLogin, repo.deployIgnoredFiles || []);
                 server.deploy();
             }
         }
@@ -94,17 +94,19 @@ class WebsiteServer extends Server {
      * @param {String} name 
      * @param {String} githubRepo 
      * @param {String} githubAuth 
+     * @param {String[]} deployIgnoredFiles 
      */
-    constructor(name, githubRepo, githubAuth) {
+    constructor(name, githubRepo, githubAuth, deployIgnoredFiles) {
 
         super(name);
 
         this.githubRepo = githubRepo;
         this.githubAuth = githubAuth;
+        this.deployIgnoredFiles = deployIgnoredFiles;
     }
 
     deploy() {
-        const command = `${__dirname}/../deployWebsite.sh ${this.name} ${this.githubRepo} ${this.githubAuth}`;
+        const command = `${__dirname}/../deployWebsite.sh ${this.name} ${this.githubRepo} ${this.githubAuth} ${this.deployIgnoredFiles.join(":")}`;
         exec(command).on("close", () => console.log("Deployed " + this.githubRepo + " with command " + command));
     }
 }
@@ -122,11 +124,11 @@ class NodeJsServer extends Server {
 
         super(name);
 
-        this.lastLogs = [];
         this.container = container;
         this.githubRepo = githubRepo;
         this.githubAuth = githubAuth;
         this.deployIgnoredFiles = deployIgnoredFiles;
+        this.lastLogs = [];
         this.logsListener = null;
         this.state = "stopped";
 
