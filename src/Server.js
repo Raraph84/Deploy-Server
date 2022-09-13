@@ -11,13 +11,11 @@ class Server {
 
     /**
      * @param {String} name 
-     * @param {String} type 
      */
-    constructor(name, type) {
+    constructor(name) {
 
         this.id = Server.servers.length;
         this.name = name;
-        this.type = type;
 
         Server.servers.push(this);
     }
@@ -73,13 +71,8 @@ class Server {
                                 }
                             }
                         },
-                        WorkingDir: "/server",
-                        Env: [
-                            "TZ=Europe/Paris",
-                            ...Object.entries(repo.environmentVariables || {}).map((environmentVariable) => environmentVariable[0] + "=" + environmentVariable[1])
-                        ],
-                        Image: repo.dockerImage,
-                        Cmd: "index.js"
+                        Env: Object.entries(repo.environmentVariables || {}).map((environmentVariable) => environmentVariable[0] + "=" + environmentVariable[1]),
+                        Image: repo.dockerImage
                     });
 
                     const server = new NodeJsServer(name, container, repo.fullname, repo.githubLogin, repo.deployIgnoredFiles || []);
@@ -104,7 +97,7 @@ class WebsiteServer extends Server {
      */
     constructor(name, githubRepo, githubAuth) {
 
-        super(name, "website");
+        super(name);
 
         this.githubRepo = githubRepo;
         this.githubAuth = githubAuth;
@@ -127,7 +120,7 @@ class NodeJsServer extends Server {
      */
     constructor(name, container, githubRepo, githubAuth, deployIgnoredFiles) {
 
-        super(name, "nodejs");
+        super(name);
 
         this.lastLogs = [];
         this.container = container;

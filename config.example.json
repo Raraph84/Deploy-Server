@@ -14,17 +14,20 @@
     "repos": [
         {
             "fullname": "MyGitHubUser/MyNodeJsRepo",
-            "githubLogin": "ghp_MY_GITHUB_ACCESS_TOKEN",
             "type": "nodejs",
-            "dockerImage": "node:r18",
+            "githubLogin": "ghp_MY_GITHUB_ACCESS_TOKEN",
+            "dockerImage": "rnode:18",
             "deployIgnoredFiles": [
                 "myFileOrFolderThatWillBeNotErasedOnDeploy.txt"
             ]
         },
         {
             "fullname": "Raraph84/MyWebsiteRepo",
+            "type": "website",
             "githubLogin": "ghp_MY_GITHUB_ACCESS_TOKEN",
-            "type": "website"
+            "deployIgnoredFiles": [
+                "myFileOrFolderThatWillBeNotErasedOnDeploy.txt"
+            ]
         }
     ]
 }
