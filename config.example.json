@@ -18,7 +18,7 @@
             "githubLogin": "ghp_MY_GITHUB_ACCESS_TOKEN",
             "dockerImage": "rnode:18",
             "deployIgnoredFiles": [
-                "myFileOrFolderThatWillBeNotErasedOnDeploy.txt"
+                "myFileOrFolderThatWillNotBeErasedOnDeploy.txt"
             ]
         },
         {
@@ -26,7 +26,7 @@
             "type": "website",
             "githubLogin": "ghp_MY_GITHUB_ACCESS_TOKEN",
             "deployIgnoredFiles": [
-                "myFileOrFolderThatWillBeNotErasedOnDeploy.txt"
+                "myFileOrFolderThatWillNotBeErasedOnDeploy.txt"
             ]
         }
     ]
