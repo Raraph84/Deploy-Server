@@ -179,6 +179,7 @@ class DockerServer extends Server {
     log(line, date) {
         const log = { line, date };
         this.lastLogs.push(log);
+        if (this.lastLogs.length > 500) this.lastLogs.shift();
         require("./gateway").gateway.clients.filter((client) => client.infos.logged).forEach((client) => client.emitEvent("LOG", { serverId: this.id, logs: [log] }));
     }
 
