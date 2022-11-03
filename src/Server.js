@@ -1,5 +1,7 @@
-const { exec } = require("child_process");
+const { homedir } = require("os");
+const { join } = require("path");
 const { mkdirSync, existsSync } = require("fs");
+const { exec } = require("child_process");
 const { getConfig, DockerLogsListener } = require("raraph84-lib");
 const Docker = require("dockerode");
 const Config = getConfig(__dirname + "/..");
@@ -27,15 +29,13 @@ class Server {
 
         for (const repo of Config.repos) {
 
-            const name = repo.fullname.replace(/[^A-Za-z0-9]/g, "-");
-
             if (repo.type === "nodejs") {
 
-                const container = containers.find((container) => container.Names[0] === "/" + name);
+                const container = containers.find((container) => container.Names[0] === "/" + repo.name);
 
                 if (container) {
 
-                    const server = new NodeJsServer(name, docker.getContainer(container.Id), repo.fullname, repo.githubLogin, repo.deployIgnoredFiles || []);
+                    const server = new NodeJsServer(repo.name, docker.getContainer(container.Id), repo.deployment || null);
 
                     if (container.State === "running") {
                         server.listenLogs();
@@ -46,19 +46,18 @@ class Server {
 
                 } else {
 
-                    if (!existsSync("/home/hebergs/nodeServers/" + name))
-                        mkdirSync("/home/hebergs/nodeServers/" + name);
+                    if (!existsSync(join(homedir(), "nodeServers", repo.name)))
+                        mkdirSync(join(homedir(), "nodeServers", repo.name));
 
                     const container = await docker.createContainer({
                         Tty: true,
                         OpenStdin: true,
-                        name: name,
-                        User: "1000",
+                        name: repo.name,
                         HostConfig: {
                             Mounts: [
                                 {
                                     Target: "/server",
-                                    Source: "/home/hebergs/nodeServers/" + name,
+                                    Source: join(homedir(), "nodeServers", repo.name),
                                     Type: "bind"
                                 }
                             ],
@@ -75,13 +74,61 @@ class Server {
                         Image: repo.dockerImage
                     });
 
-                    const server = new NodeJsServer(name, container, repo.fullname, repo.githubLogin, repo.deployIgnoredFiles || []);
+                    const server = new NodeJsServer(repo.name, container, repo.deployment || null);
+                    server.deploy();
+                }
+
+            } else if (repo.type === "python") {
+
+                const container = containers.find((container) => container.Names[0] === "/" + repo.name);
+
+                if (container) {
+
+                    const server = new PythonServer(repo.name, docker.getContainer(container.Id), repo.deployment || null);
+
+                    if (container.State === "running") {
+                        server.listenLogs();
+                        server.state = "running";
+                    } else {
+                        server.deploy();
+                    }
+
+                } else {
+
+                    if (!existsSync(join(homedir(), "pythonServers", repo.name)))
+                        mkdirSync(join(homedir(), "pythonServers", repo.name));
+
+                    const container = await docker.createContainer({
+                        Tty: true,
+                        OpenStdin: true,
+                        name: repo.name,
+                        HostConfig: {
+                            Mounts: [
+                                {
+                                    Target: "/server",
+                                    Source: join(homedir(), "pythonServers", repo.name),
+                                    Type: "bind"
+                                }
+                            ],
+                            LogConfig: {
+                                Type: "json-file",
+                                Config: {
+                                    "max-size": "5m",
+                                    "max-file": "2"
+                                }
+                            }
+                        },
+                        Env: Object.entries(repo.environmentVariables || {}).map((environmentVariable) => environmentVariable[0] + "=" + environmentVariable[1]),
+                        Image: repo.dockerImage
+                    });
+
+                    const server = new PythonServer(repo.name, container, repo.deployment || null);
                     server.deploy();
                 }
 
             } else if (repo.type === "website") {
 
-                const server = new WebsiteServer(name, repo.fullname, repo.githubLogin, repo.deployIgnoredFiles || []);
+                const server = new WebsiteServer(repo.name, repo.deployment || null);
                 server.deploy();
             }
         }
@@ -92,42 +139,36 @@ class WebsiteServer extends Server {
 
     /**
      * @param {String} name 
-     * @param {String} githubRepo 
-     * @param {String} githubAuth 
-     * @param {String[]} deployIgnoredFiles 
+     * @param {Object} deployment 
      */
-    constructor(name, githubRepo, githubAuth, deployIgnoredFiles) {
+    constructor(name, deployment) {
 
         super(name);
 
-        this.githubRepo = githubRepo;
-        this.githubAuth = githubAuth;
-        this.deployIgnoredFiles = deployIgnoredFiles;
+        this.deployment = deployment;
     }
 
-    deploy() {
-        const command = `${__dirname}/../deployWebsite.sh ${this.name} ${this.githubRepo} ${this.githubAuth} ${this.deployIgnoredFiles.join(":")}`;
-        exec(command).on("close", () => console.log("Deployed " + this.githubRepo + " with command " + command));
+    async deploy() {
+        if (this.deployment) {
+            const command = `${__dirname}/../deployWebsite.sh ${this.name} ${this.deployment.githubRepo} ${this.deployment.githubAuth || "none"} ${(this.deployment.ignoredFiles || []).join(":")}`;
+            exec(command).on("close", () => console.log("Deployed " + this.name + " with command " + command));
+        } else {
+            console.log("Deployed " + this.name);
+        }
     }
 }
 
-class NodeJsServer extends Server {
+class DockerServer extends Server {
 
     /**
      * @param {String} name 
      * @param {import("dockerode").Container} container 
-     * @param {String} githubRepo 
-     * @param {String} githubAuth 
-     * @param {String[]} deployIgnoredFiles 
      */
-    constructor(name, container, githubRepo, githubAuth, deployIgnoredFiles) {
+    constructor(name, container) {
 
         super(name);
 
         this.container = container;
-        this.githubRepo = githubRepo;
-        this.githubAuth = githubAuth;
-        this.deployIgnoredFiles = deployIgnoredFiles;
         this.lastLogs = [];
         this.logsListener = null;
         this.state = "stopped";
@@ -152,6 +193,21 @@ class NodeJsServer extends Server {
             this.logsListener.listen(startDate);
         });
     }
+}
+
+class NodeJsServer extends DockerServer {
+
+    /**
+     * @param {String} name 
+     * @param {import("dockerode").Container} container 
+     * @param {Object} deployment 
+     */
+    constructor(name, container, deployment) {
+
+        super(name, container);
+
+        this.deployment = deployment;
+    }
 
     async deploy() {
         this.state = "deploying";
@@ -160,17 +216,61 @@ class NodeJsServer extends Server {
             await this.container.stop({ t: 3 });
         } catch (error) {
         }
-        this.lastLogs = [];
-        const command = `${__dirname}/../deployNodeJs.sh ${this.name} ${this.githubRepo} ${this.githubAuth} ${this.deployIgnoredFiles.join(":")}`;
-        exec(command).on("close", async () => {
+        if (this.deployment) {
+            const command = `${__dirname}/../deployNodeJs.sh ${this.name} ${this.deployment.githubRepo} ${this.deployment.githubAuth || "none"} ${(this.deployment.ignoredFiles || []).join(":")}`;
+            exec(command).on("close", async () => {
+                this.lastLogs = [];
+                await this.container.start();
+                console.log("Deployed " + this.name + " with command " + command);
+            });
+        } else {
+            this.lastLogs = [];
             await this.container.start();
-            console.log("Deployed " + this.githubRepo + " with command " + command);
-        });
+            console.log("Deployed " + this.name);
+        }
+    }
+}
+
+class PythonServer extends DockerServer {
+
+    /**
+     * @param {String} name 
+     * @param {import("dockerode").Container} container 
+     * @param {Object} deployment 
+     */
+    constructor(name, container, deployment) {
+
+        super(name, container);
+
+        this.deployment = deployment;
+    }
+
+    async deploy() {
+        this.state = "deploying";
+        this.log("[raraph.fr] Deploying...");
+        try {
+            await this.container.stop({ t: 3 });
+        } catch (error) {
+        }
+        if (this.deployment) {
+            const command = `${__dirname}/../deployPython.sh ${this.name} ${this.deployment.githubRepo} ${this.deployment.githubAuth || "none"} ${(this.deployment.ignoredFiles || []).join(":")}`;
+            exec(command).on("close", async () => {
+                this.lastLogs = [];
+                await this.container.start();
+                console.log("Deployed " + this.name + " with command " + command);
+            });
+        } else {
+            this.lastLogs = [];
+            await this.container.start();
+            console.log("Deployed " + this.name);
+        }
     }
 }
 
 module.exports = {
     Server,
     WebsiteServer,
-    NodeJsServer
+    DockerServer,
+    NodeJsServer,
+    PythonServer
 }

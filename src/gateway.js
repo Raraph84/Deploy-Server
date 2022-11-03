@@ -1,5 +1,5 @@
 const { getConfig, WebSocketServer } = require("raraph84-lib");
-const { Server, NodeJsServer } = require("./Server");
+const { Server, DockerServer } = require("./Server");
 const Config = getConfig(__dirname + "/..");
 
 module.exports.gateway = new WebSocketServer();
@@ -39,7 +39,7 @@ module.exports.start = () => {
             client.infos.logged = true;
             client.emitEvent("LOGGED");
 
-            Server.servers.filter((server) => server instanceof NodeJsServer).forEach((server) => {
+            Server.servers.filter((server) => server instanceof DockerServer).forEach((server) => {
                 client.emitEvent("SERVER", { name: server.name, id: server.id });
                 client.emitEvent("LOG", { serverId: server.id, logs: server.lastLogs });
             });

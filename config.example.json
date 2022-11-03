@@ -13,21 +13,39 @@
     "ftpPassiveMaxPort": 21010,
     "repos": [
         {
-            "fullname": "MyGitHubUser/MyNodeJsRepo",
+            "name": "My-NodeJS-Bot",
             "type": "nodejs",
-            "githubLogin": "ghp_MY_GITHUB_ACCESS_TOKEN",
-            "dockerImage": "rnode:18",
-            "deployIgnoredFiles": [
-                "myFileOrFolderThatWillNotBeErasedOnDeploy.txt"
-            ]
+            "dockerImage": "mynode:18",
+            "deployment": {
+                "githubRepo": "MyGitHubUser/MyNodeJsRepo",
+                "githubAuth": "ghp_MY_GITHUB_ACCESS_TOKEN",
+                "ignoredFiles": [
+                    "myFileOrFolderThatWillNotBeErasedOnDeploy.txt"
+                ]
+            }
         },
         {
-            "fullname": "Raraph84/MyWebsiteRepo",
+            "name": "My-Python-Bot",
+            "type": "python",
+            "dockerImage": "rpython:3.11",
+            "deployment": {
+                "githubRepo": "MyGitHubUser/MyPythonRepo",
+                "githubAuth": "ghp_MY_GITHUB_ACCESS_TOKEN",
+                "ignoredFiles": [
+                    "myFileOrFolderThatWillNotBeErasedOnDeploy.txt"
+                ]
+            }
+        },
+        {
+            "name": "My-Website",
             "type": "website",
-            "githubLogin": "ghp_MY_GITHUB_ACCESS_TOKEN",
-            "deployIgnoredFiles": [
-                "myFileOrFolderThatWillNotBeErasedOnDeploy.txt"
-            ]
+            "deployment": {
+                "githubRepo": "MyGitHubUser/MyWebsiteRepo",
+                "githubAuth": "ghp_MY_GITHUB_ACCESS_TOKEN",
+                "ignoredFiles": [
+                    "myFileOrFolderThatWillNotBeErasedOnDeploy.txt"
+                ]
+            }
         }
     ]
 }
