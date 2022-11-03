@@ -21,7 +21,7 @@ module.exports.start = () => {
         }
 
         const server = Server.servers.find((server) => (server instanceof NodeJsServer || server instanceof WebsiteServer)
-            && server.githubRepo === message.repository.full_name);
+            && server.deployment && server.deployment.githubRepo === message.repository.full_name);
         if (!server) {
             request.end(401, "Repository not authorized");
             return;
