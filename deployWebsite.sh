@@ -6,10 +6,11 @@ if [ "$#" -ne 3 ] && [ "$#" -ne 4 ]; then
 fi
 
 GITHUB=https://$3@github.com/$2
-TEMPFOLDER=~/deployServer/temp/$1
+TEMPFOLDER=$(mktemp -d)
 WEBSITEFOLDER=~/websites/${2#*/}
 IFS=':' && read -ra IGNOREDFILES <<< $4 && IFS=' '
 
+rm -rf $TEMPFOLDER
 git clone $GITHUB $TEMPFOLDER
 chmod -R g+w $TEMPFOLDER
 

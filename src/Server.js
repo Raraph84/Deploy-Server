@@ -39,7 +39,7 @@ class Server {
 
                     if (container.State === "running") {
                         server.listenLogs();
-                        server.state = "running";
+                        server.state = "started";
                     } else {
                         server.deploy();
                     }
@@ -88,7 +88,7 @@ class Server {
 
                     if (container.State === "running") {
                         server.listenLogs();
-                        server.state = "running";
+                        server.state = "started";
                     } else {
                         server.deploy();
                     }
@@ -169,8 +169,12 @@ class DockerServer extends Server {
         super(name);
 
         this.container = container;
+
+        /** @type {Object[]} */
         this.lastLogs = [];
+        /** @type {import("raraph84-lib/src/DockerLogsListener")} */
         this.logsListener = null;
+        /** @type {"stopped"|"stopping"|"starting"|"started"|"restarting"|"deploying"} */
         this.state = "stopped";
 
         require("./gateway").gateway.clients.filter((client) => client.infos.logged).forEach((client) => client.emitEvent("SERVER", { name: this.name, id: this.id }));
@@ -194,6 +198,42 @@ class DockerServer extends Server {
             this.logsListener.listen(startDate);
         });
     }
+
+    async start() {
+
+        if (this.state !== "stopped")
+            throw "Server is not stopped";
+
+        this.state = "starting";
+        await this.container.start();
+    }
+
+    async stop() {
+
+        if (this.state !== "started")
+            throw "Server is not started";
+
+        this.state = "stopping";
+        await this.container.stop({ t: 5 });
+    }
+
+    async kill() {
+
+        if (this.state !== "started" && this.state !== "stopping")
+            throw "Server is not started";
+
+        this.state = "stopping";
+        await this.container.kill();
+    }
+
+    async restart() {
+
+        if (this.state !== "started")
+            throw "Server is not started";
+
+        this.state = "restarting";
+        await this.container.stop();
+    }
 }
 
 class NodeJsServer extends DockerServer {
@@ -214,7 +254,7 @@ class NodeJsServer extends DockerServer {
         this.state = "deploying";
         this.log("[raraph.fr] Deploying...");
         try {
-            await this.container.stop({ t: 3 });
+            await this.stop();
         } catch (error) {
         }
         if (this.deployment) {
