@@ -7,12 +7,12 @@ fi
 
 GITHUB=https://$3@github.com/$2
 TEMPFOLDER=$(mktemp -d)
-WEBSITEFOLDER=~/websites/${2#*/}
+WEBSITEFOLDER=~/websites/$1
 IFS=':' && read -ra IGNOREDFILES <<< $4 && IFS=' '
 
 rm -rf $TEMPFOLDER
 git clone $GITHUB $TEMPFOLDER
-chmod -R g+w $TEMPFOLDER
+chmod -R ug+rwx $TEMPFOLDER
 
 for IGNOREDFILE in "${IGNOREDFILES[@]}"; do
     if [ -e $WEBSITEFOLDER/$IGNOREDFILE ]; then

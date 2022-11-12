@@ -71,7 +71,8 @@ class Server {
                             }
                         },
                         Env: Object.entries(repo.environmentVariables || {}).map((environmentVariable) => environmentVariable[0] + "=" + environmentVariable[1]),
-                        Image: repo.dockerImage
+                        Image: repo.dockerImage,
+                        Cmd: (repo.mainFile || "index.js")
                     });
 
                     const server = new NodeJsServer(repo.name, container, repo.deployment || null);
@@ -119,7 +120,8 @@ class Server {
                             }
                         },
                         Env: Object.entries(repo.environmentVariables || {}).map((environmentVariable) => environmentVariable[0] + "=" + environmentVariable[1]),
-                        Image: repo.dockerImage
+                        Image: repo.dockerImage,
+                        Cmd: "if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi && python " + (repo.mainFile || "main.py")
                     });
 
                     const server = new PythonServer(repo.name, container, repo.deployment || null);
@@ -129,7 +131,8 @@ class Server {
             } else if (repo.type === "website") {
 
                 const server = new WebsiteServer(repo.name, repo.deployment || null);
-                server.deploy();
+                if (!existsSync(join(homedir(), "websites", repo.name)))
+                    server.deploy();
             }
         }
     }
@@ -214,7 +217,7 @@ class DockerServer extends Server {
             throw "Server is not started";
 
         this.state = "stopping";
-        await this.container.stop({ t: 5 });
+        await this.container.stop({ t: 3 });
     }
 
     async kill() {
@@ -232,7 +235,7 @@ class DockerServer extends Server {
             throw "Server is not started";
 
         this.state = "restarting";
-        await this.container.stop();
+        await this.container.stop({ t: 3 });
     }
 }
 
@@ -254,7 +257,7 @@ class NodeJsServer extends DockerServer {
         this.state = "deploying";
         this.log("[raraph.fr] Deploying...");
         try {
-            await this.stop();
+            await this.container.stop({ t: 3 });
         } catch (error) {
         }
         if (this.deployment) {

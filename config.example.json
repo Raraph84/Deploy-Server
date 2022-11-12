@@ -16,6 +16,7 @@
             "name": "My-NodeJS-Bot",
             "type": "nodejs",
             "dockerImage": "mynode:18",
+            "mainFile": "index.js",
             "deployment": {
                 "githubRepo": "MyGitHubUser/MyNodeJsRepo",
                 "githubAuth": "ghp_MY_GITHUB_ACCESS_TOKEN",
@@ -28,6 +29,7 @@
             "name": "My-Python-Bot",
             "type": "python",
             "dockerImage": "rpython:3.11",
+            "mainFile": "main.js",
             "deployment": {
                 "githubRepo": "MyGitHubUser/MyPythonRepo",
                 "githubAuth": "ghp_MY_GITHUB_ACCESS_TOKEN",
