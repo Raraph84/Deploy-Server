@@ -15,8 +15,13 @@ module.exports.start = () => {
             return;
         }
 
-        if (!message.repository || !message.repository.full_name) {
-            request.end(400, "Invalid content");
+        if (typeof message.ref !== "string" || typeof message.repository !== "object" || typeof message.repository.full_name !== "string") {
+            request.end(400, "Invalid JSON");
+            return;
+        }
+
+        if (message.ref !== "refs/heads/master") {
+            request.end(400, "Invalid branch");
             return;
         }
 
