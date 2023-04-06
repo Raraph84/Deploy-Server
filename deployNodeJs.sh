@@ -8,9 +8,8 @@ fi
 GITHUB=https://$3@github.com/$2
 TEMPFOLDER=$(mktemp -d)
 SERVERFOLDER=~/nodeServers/$1
-IFS=':' && read -ra IGNOREDFILES <<< $4 && IFS=' '
+IFS=':' && read -ra IGNOREDFILES <<<$4 && IFS=' '
 
-rm -rf $TEMPFOLDER
 git clone $GITHUB $TEMPFOLDER
 
 if [ -e $TEMPFOLDER/package.json ]; then
