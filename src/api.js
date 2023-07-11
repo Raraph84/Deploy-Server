@@ -20,7 +20,7 @@ module.exports.start = () => {
             return;
         }
 
-        if (message.ref !== "refs/heads/master") {
+        if (message.ref !== "refs/heads/master" || message.ref !== "refs/heads/main") {
             request.end(400, "Invalid branch");
             return;
         }

@@ -15,17 +15,17 @@ module.exports.start = async () => {
         }
     }
 
-    class Logger {
-        write(data) {
-            data = JSON.parse(data);
-            if (data.msg === "Listening")
-                console.log("Serveur FTP lancé sur le port " + data.port);
-        }
-    }
-
     console.log("Lancement du serveur FTP...");
     const ftpServer = new FtpSrv({
-        log: createLogger({ name: "ftp-srv", stream: new Logger() }),
+        log: createLogger({
+            name: "ftp-srv", stream: {
+                write: (data) => {
+                    data = JSON.parse(data);
+                    if (data.msg === "Listening")
+                        console.log("Serveur FTP lancé sur le port " + data.port);
+                }
+            }
+        }),
         url: "ftp://[::]:" + Config.ftpPort,
         pasv_url: passiveUrl,
         pasv_min: Config.ftpPassiveMinPort,
