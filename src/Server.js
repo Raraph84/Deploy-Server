@@ -56,7 +56,7 @@ class Server {
                         HostConfig: {
                             Mounts: [
                                 {
-                                    Target: "/server",
+                                    Target: "/home/server",
                                     Source: join(homedir(), "nodeServers", repo.name),
                                     Type: "bind"
                                 }
@@ -72,7 +72,7 @@ class Server {
                         },
                         Env: Object.entries(repo.environmentVariables || {}).map((environmentVariable) => environmentVariable[0] + "=" + environmentVariable[1]),
                         Image: repo.dockerImage,
-                        Cmd: (repo.mainFile || "index.js")
+                        Cmd: ["node", repo.mainFile || "index.js"]
                     });
 
                     const server = new NodeJsServer(repo.name, container, repo.deployment || null);
@@ -106,7 +106,7 @@ class Server {
                         HostConfig: {
                             Mounts: [
                                 {
-                                    Target: "/server",
+                                    Target: "/home/server",
                                     Source: join(homedir(), "pythonServers", repo.name),
                                     Type: "bind"
                                 }
