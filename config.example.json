@@ -19,6 +19,7 @@
             "mainFile": "index.js",
             "deployment": {
                 "githubRepo": "MyGitHubUser/MyNodeJsRepo",
+                "githubBranch": "main",
                 "githubAuth": "ghp_MY_GITHUB_ACCESS_TOKEN",
                 "ignoredFiles": [
                     "myFileOrFolderThatWillNotBeErasedOnDeploy.txt"
@@ -32,6 +33,7 @@
             "mainFile": "main.js",
             "deployment": {
                 "githubRepo": "MyGitHubUser/MyPythonRepo",
+                "githubBranch": "master",
                 "githubAuth": "ghp_MY_GITHUB_ACCESS_TOKEN",
                 "ignoredFiles": [
                     "myFileOrFolderThatWillNotBeErasedOnDeploy.txt"
@@ -43,10 +45,8 @@
             "type": "website",
             "deployment": {
                 "githubRepo": "MyGitHubUser/MyWebsiteRepo",
-                "githubAuth": "ghp_MY_GITHUB_ACCESS_TOKEN",
-                "ignoredFiles": [
-                    "myFileOrFolderThatWillNotBeErasedOnDeploy.txt"
-                ]
+                "githubBranch": "newfeature",
+                "githubAuth": "ghp_MY_GITHUB_ACCESS_TOKEN"
             }
         }
     ]

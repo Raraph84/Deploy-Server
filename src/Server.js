@@ -153,7 +153,7 @@ class WebsiteServer extends Server {
 
     async deploy() {
         if (this.deployment) {
-            const command = `${__dirname}/../deployWebsite.sh ${this.name} ${this.deployment.githubRepo} ${this.deployment.githubAuth || "none"} ${(this.deployment.ignoredFiles || []).join(":")}`;
+            const command = `${__dirname}/../deployWebsite.sh ${this.name} ${this.deployment.githubRepo}/${this.deployment.githubBranch} ${this.deployment.githubAuth || "none"} ${(this.deployment.ignoredFiles || []).join(":")}`;
             exec(command).on("close", () => console.log("Deployed " + this.name + " with command " + command));
         } else {
             console.log("Deployed " + this.name);
@@ -261,7 +261,7 @@ class NodeJsServer extends DockerServer {
         } catch (error) {
         }
         if (this.deployment) {
-            const command = `${__dirname}/../deployNodeJs.sh ${this.name} ${this.deployment.githubRepo} ${this.deployment.githubAuth || "none"} ${(this.deployment.ignoredFiles || []).join(":")}`;
+            const command = `${__dirname}/../deployNodeJs.sh ${this.name} ${this.deployment.githubRepo}/${this.deployment.githubBranch} ${this.deployment.githubAuth || "none"} ${(this.deployment.ignoredFiles || []).join(":")}`;
             exec(command).on("close", async () => {
                 this.lastLogs = [];
                 await this.container.start();
@@ -297,7 +297,7 @@ class PythonServer extends DockerServer {
         } catch (error) {
         }
         if (this.deployment) {
-            const command = `${__dirname}/../deployPython.sh ${this.name} ${this.deployment.githubRepo} ${this.deployment.githubAuth || "none"} ${(this.deployment.ignoredFiles || []).join(":")}`;
+            const command = `${__dirname}/../deployPython.sh ${this.name} ${this.deployment.githubRepo}/${this.deployment.githubBranch} ${this.deployment.githubAuth || "none"} ${(this.deployment.ignoredFiles || []).join(":")}`;
             exec(command).on("close", async () => {
                 this.lastLogs = [];
                 await this.container.start();

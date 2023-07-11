@@ -5,12 +5,15 @@ if [ "$#" -ne 3 ] && [ "$#" -ne 4 ]; then
     exit
 fi
 
-GITHUB=https://$3@github.com/$2
+SPLITTED_REPOSITORY=(${2//\// })
+USER=${SPLITTED_REPOSITORY[0]}
+REPO=${SPLITTED_REPOSITORY[1]}
+BRANCH=${SPLITTED_REPOSITORY[2]}
 TEMPFOLDER=$(mktemp -d)
 SERVERFOLDER=~/nodeServers/$1
 IFS=':' && read -ra IGNOREDFILES <<<$4 && IFS=' '
 
-git clone $GITHUB $TEMPFOLDER
+git clone https://$3@github.com/$USER/$REPO -b $BRANCH $TEMPFOLDER
 
 if [ -e $TEMPFOLDER/package.json ]; then
     cd $TEMPFOLDER
@@ -18,10 +21,10 @@ if [ -e $TEMPFOLDER/package.json ]; then
         if [ -z "$(cmp $TEMPFOLDER/package.json $SERVERFOLDER/package.json)" ]; then
             cp -r $SERVERFOLDER/node_modules $TEMPFOLDER
         else
-            npm install --production
+            npm install --omit=dev
         fi
     else
-        npm install --production
+        npm install --omit=dev
     fi
 fi
 

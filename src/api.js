@@ -9,7 +9,7 @@ module.exports.start = () => {
 
         let message;
         try {
-            message = JSON.parse(request.data);
+            message = JSON.parse(request.body);
         } catch (error) {
             request.end(400, "Invalid JSON");
             return;
@@ -20,15 +20,10 @@ module.exports.start = () => {
             return;
         }
 
-        if (message.ref !== "refs/heads/master" || message.ref !== "refs/heads/main") {
-            request.end(400, "Invalid branch");
-            return;
-        }
-
         const server = Server.servers.find((server) => (server instanceof NodeJsServer || server instanceof WebsiteServer)
-            && server.deployment && server.deployment.githubRepo === message.repository.full_name);
+            && server.deployment && server.deployment.githubRepo === message.repository.full_name && server.deployment.githubBranch === message.ref.split("/").pop());
         if (!server) {
-            request.end(401, "Repository not authorized");
+            request.end(401, "Repository or branch not authorized");
             return;
         }
 

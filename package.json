@@ -6,9 +6,8 @@
   "author": "Raraph84",
   "license": "ISC",
   "dependencies": {
-    "dockerode": "^3.3.4",
+    "dockerode": "^3.3.5",
     "ftp-srv": "^4.6.2",
-    "node-fetch": "^2.6.7",
-    "raraph84-lib": "^2.15.3"
+    "raraph84-lib": "^2.16.4"
   }
 }

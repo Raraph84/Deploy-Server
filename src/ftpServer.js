@@ -1,4 +1,3 @@
-const { default: fetch } = require("node-fetch");
 const { createLogger } = require("bunyan");
 const { FtpSrv, ftpErrors } = require("ftp-srv");
 const { getConfig } = require("raraph84-lib");
