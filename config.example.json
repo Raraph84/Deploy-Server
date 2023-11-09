@@ -6,16 +6,16 @@
     "ftpCredentials": {
         "myUser": {
             "password": "myPassword",
-            "root": "/home/me/websites/myWebsite"
+            "root": "/home/me/servers/myWebsite"
         }
     },
     "ftpPassiveMinPort": 21000,
     "ftpPassiveMaxPort": 21010,
-    "repos": [
+    "servers": [
         {
             "name": "My-NodeJS-Bot",
             "type": "nodejs",
-            "dockerImage": "mynode:18",
+            "dockerImage": "mynode:20",
             "mainFile": "index.js",
             "deployment": {
                 "githubRepo": "MyGitHubUser/MyNodeJsRepo",

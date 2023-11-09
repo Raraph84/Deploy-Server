@@ -27,15 +27,15 @@ class Server {
         const docker = new Docker();
         const containers = await docker.listContainers({ all: true });
 
-        for (const repo of Config.repos) {
+        for (const serverInfos of Config.servers) {
 
-            if (repo.type === "nodejs") {
+            if (serverInfos.type === "nodejs") {
 
-                const container = containers.find((container) => container.Names[0] === "/" + repo.name);
+                const container = containers.find((container) => container.Names[0] === "/" + serverInfos.name);
 
                 if (container) {
 
-                    const server = new NodeJsServer(repo.name, docker.getContainer(container.Id), repo.deployment || null);
+                    const server = new NodeJsServer(serverInfos.name, docker.getContainer(container.Id), serverInfos.deployment || null);
 
                     if (container.State === "running") {
                         server.listenLogs();
@@ -46,18 +46,18 @@ class Server {
 
                 } else {
 
-                    if (!existsSync(join(homedir(), "nodeServers", repo.name)))
-                        mkdirSync(join(homedir(), "nodeServers", repo.name));
+                    if (!existsSync(join(homedir(), "servers", serverInfos.name)))
+                        mkdirSync(join(homedir(), "servers", serverInfos.name));
 
                     const container = await docker.createContainer({
                         Tty: true,
                         OpenStdin: true,
-                        name: repo.name,
+                        name: serverInfos.name,
                         HostConfig: {
                             Mounts: [
                                 {
                                     Target: "/home/server",
-                                    Source: join(homedir(), "nodeServers", repo.name),
+                                    Source: join(homedir(), "servers", serverInfos.name),
                                     Type: "bind"
                                 }
                             ],
@@ -70,22 +70,22 @@ class Server {
                                 }
                             }
                         },
-                        Env: Object.entries(repo.environmentVariables || {}).map((environmentVariable) => environmentVariable[0] + "=" + environmentVariable[1]),
-                        Image: repo.dockerImage,
-                        Cmd: ["node", repo.mainFile || "index.js"]
+                        Env: Object.entries(serverInfos.environmentVariables || {}).map((environmentVariable) => environmentVariable[0] + "=" + environmentVariable[1]),
+                        Image: serverInfos.dockerImage,
+                        Cmd: ["node", serverInfos.mainFile || "index.js"]
                     });
 
-                    const server = new NodeJsServer(repo.name, container, repo.deployment || null);
+                    const server = new NodeJsServer(serverInfos.name, container, serverInfos.deployment || null);
                     server.deploy();
                 }
 
-            } else if (repo.type === "python") {
+            } else if (serverInfos.type === "python") {
 
-                const container = containers.find((container) => container.Names[0] === "/" + repo.name);
+                const container = containers.find((container) => container.Names[0] === "/" + serverInfos.name);
 
                 if (container) {
 
-                    const server = new PythonServer(repo.name, docker.getContainer(container.Id), repo.deployment || null);
+                    const server = new PythonServer(serverInfos.name, docker.getContainer(container.Id), serverInfos.deployment || null);
 
                     if (container.State === "running") {
                         server.listenLogs();
@@ -96,18 +96,18 @@ class Server {
 
                 } else {
 
-                    if (!existsSync(join(homedir(), "pythonServers", repo.name)))
-                        mkdirSync(join(homedir(), "pythonServers", repo.name));
+                    if (!existsSync(join(homedir(), "servers", serverInfos.name)))
+                        mkdirSync(join(homedir(), "servers", serverInfos.name));
 
                     const container = await docker.createContainer({
                         Tty: true,
                         OpenStdin: true,
-                        name: repo.name,
+                        name: serverInfos.name,
                         HostConfig: {
                             Mounts: [
                                 {
                                     Target: "/home/server",
-                                    Source: join(homedir(), "pythonServers", repo.name),
+                                    Source: join(homedir(), "servers", serverInfos.name),
                                     Type: "bind"
                                 }
                             ],
@@ -119,19 +119,19 @@ class Server {
                                 }
                             }
                         },
-                        Env: Object.entries(repo.environmentVariables || {}).map((environmentVariable) => environmentVariable[0] + "=" + environmentVariable[1]),
-                        Image: repo.dockerImage,
-                        Cmd: "if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi && python " + (repo.mainFile || "main.py")
+                        Env: Object.entries(serverInfos.environmentVariables || {}).map((environmentVariable) => environmentVariable[0] + "=" + environmentVariable[1]),
+                        Image: serverInfos.dockerImage,
+                        Cmd: "if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi && python " + (serverInfos.mainFile || "main.py")
                     });
 
-                    const server = new PythonServer(repo.name, container, repo.deployment || null);
+                    const server = new PythonServer(serverInfos.name, container, serverInfos.deployment || null);
                     server.deploy();
                 }
 
-            } else if (repo.type === "website") {
+            } else if (serverInfos.type === "website") {
 
-                const server = new WebsiteServer(repo.name, repo.deployment || null);
-                if (!existsSync(join(homedir(), "websites", repo.name)))
+                const server = new WebsiteServer(serverInfos.name, serverInfos.deployment || null);
+                if (!existsSync(join(homedir(), "servers", serverInfos.name)))
                     server.deploy();
             }
         }

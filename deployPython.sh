@@ -10,7 +10,7 @@ USER=${SPLITTED_REPOSITORY[0]}
 REPO=${SPLITTED_REPOSITORY[1]}
 BRANCH=${SPLITTED_REPOSITORY[2]}
 TEMPFOLDER=$(mktemp -d)
-SERVERFOLDER=~/pythonServers/$1
+SERVERFOLDER=~/servers/$1
 IFS=':' && read -ra IGNOREDFILES <<<$4 && IFS=' '
 
 git clone https://$3@github.com/$USER/$REPO -b $BRANCH $TEMPFOLDER
