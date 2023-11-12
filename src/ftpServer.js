@@ -3,6 +3,9 @@ const { FtpSrv, ftpErrors } = require("ftp-srv");
 const { getConfig } = require("raraph84-lib");
 const Config = getConfig(__dirname + "/..");
 
+/** @type {import("ftp-srv").FtpSrv} */
+let ftpServer;
+
 module.exports.start = async () => {
 
     let passiveUrl;
@@ -15,7 +18,7 @@ module.exports.start = async () => {
     }
 
     console.log("Lancement du serveur FTP...");
-    const ftpServer = new FtpSrv({
+    ftpServer = new FtpSrv({
         log: createLogger({
             name: "ftp-srv", stream: {
                 write: (data) => {
@@ -42,4 +45,8 @@ module.exports.start = async () => {
     });
 
     ftpServer.listen();
+}
+
+module.exports.stop = async () => {
+    ftpServer.close();
 }

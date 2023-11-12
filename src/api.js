@@ -2,9 +2,13 @@ const { getConfig, HttpServer } = require("raraph84-lib");
 const { Server, NodeJsServer, WebsiteServer } = require("./Server");
 const Config = getConfig(__dirname + "/..");
 
-module.exports.start = () => {
+/** @param {import("raraph84-lib/src/HttpServer")} */
+let api;
 
-    const api = new HttpServer();
+module.exports.start = async () => {
+
+    api = new HttpServer();
+
     api.on("request", (/** @type {import("raraph84-lib/src/Request")} */ request) => {
 
         let message;
@@ -32,5 +36,10 @@ module.exports.start = () => {
     });
 
     console.log("Lancement du serveur HTTP...");
-    api.listen(Config.apiPort).then(() => console.log("Serveur HTTP lancé sur le port " + Config.apiPort + " !"));
+    await api.listen(Config.apiPort);
+    console.log("Serveur HTTP lancé sur le port " + Config.apiPort + " !");
+}
+
+module.exports.stop = async () => {
+    await api.close();
 }

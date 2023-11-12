@@ -12,7 +12,7 @@ class Server {
     static servers = [];
 
     /**
-     * @param {String} name 
+     * @param {string} name 
      */
     constructor(name) {
 
@@ -22,7 +22,10 @@ class Server {
         Server.servers.push(this);
     }
 
-    static async init() {
+    /**
+     * @param {import("raraph84-lib/src/WebSocketServer")} gateway 
+     */
+    static async init(gateway) {
 
         const docker = new Docker();
         const containers = await docker.listContainers({ all: true });
@@ -35,7 +38,7 @@ class Server {
 
                 if (container) {
 
-                    const server = new NodeJsServer(serverInfos.name, docker.getContainer(container.Id), serverInfos.deployment || null);
+                    const server = new NodeJsServer(serverInfos.name, docker.getContainer(container.Id), gateway, serverInfos.deployment || null);
 
                     if (container.State === "running") {
                         server.listenLogs();
@@ -75,7 +78,7 @@ class Server {
                         Cmd: ["node", serverInfos.mainFile || "index.js"]
                     });
 
-                    const server = new NodeJsServer(serverInfos.name, container, serverInfos.deployment || null);
+                    const server = new NodeJsServer(serverInfos.name, container, gateway, serverInfos.deployment || null);
                     server.deploy();
                 }
 
@@ -85,7 +88,7 @@ class Server {
 
                 if (container) {
 
-                    const server = new PythonServer(serverInfos.name, docker.getContainer(container.Id), serverInfos.deployment || null);
+                    const server = new PythonServer(serverInfos.name, docker.getContainer(container.Id), gateway, serverInfos.deployment || null);
 
                     if (container.State === "running") {
                         server.listenLogs();
@@ -124,7 +127,7 @@ class Server {
                         Cmd: "if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi && python " + (serverInfos.mainFile || "main.py")
                     });
 
-                    const server = new PythonServer(serverInfos.name, container, serverInfos.deployment || null);
+                    const server = new PythonServer(serverInfos.name, container, gateway, serverInfos.deployment || null);
                     server.deploy();
                 }
 
@@ -141,8 +144,8 @@ class Server {
 class WebsiteServer extends Server {
 
     /**
-     * @param {String} name 
-     * @param {Object} deployment 
+     * @param {string} name 
+     * @param {object} deployment 
      */
     constructor(name, deployment) {
 
@@ -163,31 +166,35 @@ class WebsiteServer extends Server {
 
 class DockerServer extends Server {
 
+    #gateway;
+
     /**
-     * @param {String} name 
+     * @param {string} name 
      * @param {import("dockerode").Container} container 
+     * @param {import("raraph84-lib/src/WebSocketServer")} gateway 
      */
-    constructor(name, container) {
+    constructor(name, container, gateway) {
 
         super(name);
 
         this.container = container;
-
-        /** @type {Object[]} */
+        /** @type {object[]} */
         this.lastLogs = [];
         /** @type {import("raraph84-lib/src/DockerLogsListener")} */
         this.logsListener = null;
         /** @type {"stopped"|"stopping"|"starting"|"started"|"restarting"|"deploying"} */
         this.state = "stopped";
 
-        require("./gateway").gateway.clients.filter((client) => client.infos.logged).forEach((client) => client.emitEvent("SERVER", { name: this.name, id: this.id }));
+        this.#gateway = gateway;
+
+        this.#gateway.clients.filter((client) => client.infos.logged).forEach((client) => client.emitEvent("SERVER", { name: this.name, id: this.id }));
     }
 
     log(line, date) {
         const log = { line, date };
         this.lastLogs.push(log);
         if (this.lastLogs.length > 500) this.lastLogs.shift();
-        require("./gateway").gateway.clients.filter((client) => client.infos.logged).forEach((client) => client.emitEvent("LOG", { serverId: this.id, logs: [log] }));
+        this.#gateway.clients.filter((client) => client.infos.logged).forEach((client) => client.emitEvent("LOG", { serverId: this.id, logs: [log] }));
     }
 
     listenLogs() {
@@ -242,13 +249,14 @@ class DockerServer extends Server {
 class NodeJsServer extends DockerServer {
 
     /**
-     * @param {String} name 
+     * @param {string} name 
      * @param {import("dockerode").Container} container 
-     * @param {Object} deployment 
+     * @param {import("raraph84-lib/src/WebSocketServer")} gateway 
+     * @param {object} deployment 
      */
-    constructor(name, container, deployment) {
+    constructor(name, container, gateway, deployment) {
 
-        super(name, container);
+        super(name, container, gateway);
 
         this.deployment = deployment;
     }
@@ -278,13 +286,14 @@ class NodeJsServer extends DockerServer {
 class PythonServer extends DockerServer {
 
     /**
-     * @param {String} name 
+     * @param {string} name 
      * @param {import("dockerode").Container} container 
-     * @param {Object} deployment 
+     * @param {import("raraph84-lib/src/WebSocketServer")} gateway 
+     * @param {object} deployment 
      */
-    constructor(name, container, deployment) {
+    constructor(name, container, gateway, deployment) {
 
-        super(name, container);
+        super(name, container, gateway);
 
         this.deployment = deployment;
     }

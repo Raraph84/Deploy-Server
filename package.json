@@ -1,13 +1,13 @@
 {
-  "name": "deployserver",
+  "name": "deploy-server",
   "version": "1.0.0",
   "description": "Serveur de déploiment automatique GitHub",
   "main": "index.js",
   "author": "Raraph84",
   "license": "ISC",
   "dependencies": {
-    "dockerode": "^3.3.5",
-    "ftp-srv": "^4.6.2",
-    "raraph84-lib": "^2.16.4"
+    "dockerode": "^4.0.0",
+    "ftp-srv": "^4.6.3",
+    "raraph84-lib": "^2.16.7"
   }
 }

@@ -2,17 +2,19 @@ const Docker = require("dockerode");
 const { DockerEventListener } = require("raraph84-lib");
 const { Server, DockerServer } = require("./Server");
 
-module.exports.start = () => {
+/** @type {import("raraph84-lib/src/DockerEventListener")} */
+let eventListener;
+
+module.exports.start = async () => {
 
     const docker = new Docker();
 
-    const eventListener = new DockerEventListener(docker);
+    eventListener = new DockerEventListener(docker);
     eventListener.on("rawEvent", (event) => {
 
-        if (event.Type !== "container") return;
+        if (event.Type !== "container" || !event.Actor.Attributes.name) return;
 
-        const name = event.Actor.Attributes.name.replace(/[^A-Za-z0-9]/g, "-");
-        const server = Server.servers.find((server) => server.name === name);
+        const server = Server.servers.find((server) => server.name === event.Actor.Attributes.name);
         if (!server || !(server instanceof DockerServer)) return;
 
         if (event.Action === "start") {
@@ -35,4 +37,8 @@ module.exports.start = () => {
     });
 
     eventListener.listen();
+}
+
+module.exports.stop = async () => {
+    eventListener.close();
 }
