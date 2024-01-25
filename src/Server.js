@@ -38,7 +38,7 @@ class Server {
 
                 if (container) {
 
-                    const server = new NodeJsServer(serverInfos.name, docker.getContainer(container.Id), gateway, serverInfos.deployment || null);
+                    const server = new NodeJsServer(serverInfos.name, docker.getContainer(container.Id), gateway, serverInfos.dockerImage, serverInfos.deployment || null);
 
                     if (container.State === "running") {
                         server.listenLogs();
@@ -78,7 +78,7 @@ class Server {
                         Cmd: ["node", serverInfos.mainFile || "index.js"]
                     });
 
-                    const server = new NodeJsServer(serverInfos.name, container, gateway, serverInfos.deployment || null);
+                    const server = new NodeJsServer(serverInfos.name, container, gateway, serverInfos.dockerImage, serverInfos.deployment || null);
                     server.deploy();
                 }
 
@@ -88,7 +88,7 @@ class Server {
 
                 if (container) {
 
-                    const server = new PythonServer(serverInfos.name, docker.getContainer(container.Id), gateway, serverInfos.deployment || null);
+                    const server = new PythonServer(serverInfos.name, docker.getContainer(container.Id), gateway, serverInfos.dockerImage, serverInfos.deployment || null);
 
                     if (container.State === "running") {
                         server.listenLogs();
@@ -127,7 +127,7 @@ class Server {
                         Cmd: "if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi && python " + (serverInfos.mainFile || "main.py")
                     });
 
-                    const server = new PythonServer(serverInfos.name, container, gateway, serverInfos.deployment || null);
+                    const server = new PythonServer(serverInfos.name, container, gateway, serverInfos.dockerImage, serverInfos.deployment || null);
                     server.deploy();
                 }
 
@@ -172,12 +172,14 @@ class DockerServer extends Server {
      * @param {string} name 
      * @param {import("dockerode").Container} container 
      * @param {import("raraph84-lib/src/WebSocketServer")} gateway 
+     * @param {string} dockerImage 
      */
-    constructor(name, container, gateway) {
+    constructor(name, container, gateway, dockerImage) {
 
         super(name);
 
         this.container = container;
+        this.dockerImage = dockerImage;
         /** @type {object[]} */
         this.lastLogs = [];
         /** @type {import("raraph84-lib/src/DockerLogsListener")} */
@@ -252,11 +254,12 @@ class NodeJsServer extends DockerServer {
      * @param {string} name 
      * @param {import("dockerode").Container} container 
      * @param {import("raraph84-lib/src/WebSocketServer")} gateway 
+     * @param {string} dockerImage 
      * @param {object} deployment 
      */
-    constructor(name, container, gateway, deployment) {
+    constructor(name, container, gateway, dockerImage, deployment) {
 
-        super(name, container, gateway);
+        super(name, container, gateway, dockerImage);
 
         this.deployment = deployment;
     }
@@ -269,7 +272,7 @@ class NodeJsServer extends DockerServer {
         } catch (error) {
         }
         if (this.deployment) {
-            const command = `${__dirname}/../deployNodeJs.sh ${this.name} ${this.deployment.githubRepo}/${this.deployment.githubBranch} ${this.deployment.githubAuth || "none"} ${(this.deployment.ignoredFiles || []).join(":")}`;
+            const command = `${__dirname}/../deployNodeJs.sh ${this.name} ${this.deployment.githubRepo}/${this.deployment.githubBranch} ${this.deployment.githubAuth || "none"} ${this.dockerImage} ${(this.deployment.ignoredFiles || []).join(":")}`;
             exec(command).on("close", async () => {
                 this.lastLogs = [];
                 await this.container.start();
@@ -289,11 +292,12 @@ class PythonServer extends DockerServer {
      * @param {string} name 
      * @param {import("dockerode").Container} container 
      * @param {import("raraph84-lib/src/WebSocketServer")} gateway 
+     * @param {string} dockerImage 
      * @param {object} deployment 
      */
-    constructor(name, container, gateway, deployment) {
+    constructor(name, container, gateway, dockerImage, deployment) {
 
-        super(name, container, gateway);
+        super(name, container, dockerImage, gateway);
 
         this.deployment = deployment;
     }

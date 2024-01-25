@@ -14,6 +14,7 @@ SERVERFOLDER=~/servers/$1
 IFS=':' && read -ra IGNOREDFILES <<<$4 && IFS=' '
 
 git clone https://$3@github.com/$USER/$REPO -b $BRANCH $TEMPFOLDER
+rm -rf $TEMPFOLDER/.git
 
 for IGNOREDFILE in "${IGNOREDFILES[@]}"; do
     if [ -e $SERVERFOLDER/$IGNOREDFILE ]; then

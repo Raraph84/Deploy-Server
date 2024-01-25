@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ "$#" -ne 3 ] && [ "$#" -ne 4 ]; then
+if [ "$#" -ne 4 ] && [ "$#" -ne 5 ]; then
     echo "Invalid number of parameters"
     exit
 fi
@@ -11,9 +11,11 @@ REPO=${SPLITTED_REPOSITORY[1]}
 BRANCH=${SPLITTED_REPOSITORY[2]}
 TEMPFOLDER=$(mktemp -d)
 SERVERFOLDER=~/servers/$1
-IFS=':' && read -ra IGNOREDFILES <<<$4 && IFS=' '
+DOCKER_IMAGE=$4
+IFS=':' && read -ra IGNOREDFILES <<<$5 && IFS=' '
 
 git clone https://$3@github.com/$USER/$REPO -b $BRANCH $TEMPFOLDER
+rm -rf $TEMPFOLDER/.git
 
 if [ -e $TEMPFOLDER/package.json ]; then
     cd $TEMPFOLDER
@@ -21,10 +23,10 @@ if [ -e $TEMPFOLDER/package.json ]; then
         if [ -z "$(cmp $TEMPFOLDER/package.json $SERVERFOLDER/package.json)" ]; then
             cp -r $SERVERFOLDER/node_modules $TEMPFOLDER
         else
-            npm install --omit=dev
+            docker run --rm -i -v $TEMPFOLDER:/home/server $DOCKER_IMAGE npm install --omit=dev
         fi
     else
-        npm install --omit=dev
+        docker run --rm -i -v $TEMPFOLDER:/home/server $DOCKER_IMAGE npm install --omit=dev
     fi
 fi
 
