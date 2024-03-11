@@ -1,8 +1,8 @@
-#!/bin/bash
+#!/bin/bash -e
 
 if [ "$#" -ne 3 ] && [ "$#" -ne 4 ]; then
     echo "Invalid number of parameters"
-    exit
+    exit 1
 fi
 
 SPLITTED_REPOSITORY=(${2//\// })

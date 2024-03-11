@@ -1,10 +1,19 @@
 const { homedir } = require("os");
 const { join } = require("path");
 const { mkdirSync, existsSync } = require("fs");
-const { exec } = require("child_process");
+const { spawn } = require("child_process");
 const { getConfig, DockerLogsListener } = require("raraph84-lib");
 const Docker = require("dockerode");
 const Config = getConfig(__dirname + "/..");
+
+const run = (command) => new Promise((resolve, reject) => {
+    const proc = spawn(command.split(" ")[0], command.split(" ").slice(1));
+    let out = "";
+    proc.stdout.on("data", (data) => out += data);
+    proc.stderr.on("data", (data) => out += data);
+    proc.on("close", (code) => code === 0 ? resolve(out) : reject(out));
+    proc.on("error", (error) => reject(error));
+});
 
 class Server {
 
@@ -155,12 +164,21 @@ class WebsiteServer extends Server {
     }
 
     async deploy() {
-        if (this.deployment) {
-            const command = `${__dirname}/../deployWebsite.sh ${this.name} ${this.deployment.githubRepo}/${this.deployment.githubBranch} ${this.deployment.githubAuth || "none"} ${(this.deployment.ignoredFiles || []).join(":")}`;
-            exec(command).on("close", () => console.log("Deployed " + this.name + " with command " + command));
-        } else {
-            console.log("Deployed " + this.name);
+
+        if (!this.deployment) return;
+
+        const command = `${__dirname}/../deployWebsite.sh ${this.name} ${this.deployment.githubRepo}/${this.deployment.githubBranch} ${this.deployment.githubAuth || "none"} ${(this.deployment.ignoredFiles || []).join(":")}`;
+
+        console.log("Deploying " + this.name + " with command " + command);
+
+        try {
+            await run(command);
+        } catch (error) {
+            console.log("Error deploying " + this.name + " :", error);
+            return;
         }
+
+        console.log("Deployed " + this.name);
     }
 }
 
@@ -265,23 +283,37 @@ class NodeJsServer extends DockerServer {
     }
 
     async deploy() {
+
         this.state = "deploying";
         this.log("[raraph.fr] Deploying...");
+
         try {
             await this.container.stop({ t: 3 });
         } catch (error) {
         }
+
         if (this.deployment) {
+
             const command = `${__dirname}/../deployNodeJs.sh ${this.name} ${this.deployment.githubRepo}/${this.deployment.githubBranch} ${this.deployment.githubAuth || "none"} ${this.dockerImage} ${(this.deployment.ignoredFiles || []).join(":")}`;
-            exec(command).on("close", async () => {
-                this.lastLogs = [];
-                await this.container.start();
-                console.log("Deployed " + this.name + " with command " + command);
-            });
-        } else {
+
+            console.log("Deploying " + this.name + " with command " + command);
+
+            try {
+                await run(command);
+            } catch (error) {
+                console.log("Error deploying " + this.name + "  :", error);
+                return;
+            }
+
             this.lastLogs = [];
             await this.container.start();
+
             console.log("Deployed " + this.name);
+
+        } else {
+
+            this.lastLogs = [];
+            await this.container.start();
         }
     }
 }
@@ -303,23 +335,37 @@ class PythonServer extends DockerServer {
     }
 
     async deploy() {
+
         this.state = "deploying";
         this.log("[raraph.fr] Deploying...");
+
         try {
             await this.container.stop({ t: 3 });
         } catch (error) {
         }
+
         if (this.deployment) {
+
             const command = `${__dirname}/../deployPython.sh ${this.name} ${this.deployment.githubRepo}/${this.deployment.githubBranch} ${this.deployment.githubAuth || "none"} ${(this.deployment.ignoredFiles || []).join(":")}`;
-            exec(command).on("close", async () => {
-                this.lastLogs = [];
-                await this.container.start();
-                console.log("Deployed " + this.name + " with command " + command);
-            });
-        } else {
+
+            console.log("Deploying " + this.name + " with command " + command);
+
+            try {
+                await run(command);
+            } catch (error) {
+                console.log("Error deploying " + this.name + "  :", error);
+                return;
+            }
+
             this.lastLogs = [];
             await this.container.start();
+
             console.log("Deployed " + this.name);
+
+        } else {
+
+            this.lastLogs = [];
+            await this.container.start();
         }
     }
 }
