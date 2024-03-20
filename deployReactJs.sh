@@ -15,7 +15,7 @@ BUILD_DOCKER_IMAGE=$4
 IFS=':' && read -ra IGNORED_FILES <<<$5 && IFS=' '
 
 git clone https://$3@github.com/$USER/$REPO -b $BRANCH $TEMP_DIR
-rm -rf $TEMP_DIR/.git
+rm -rf $TEMP_DIR/.git $TEMP_DIR/build $TEMP_DIR/www
 
 cd $TEMP_DIR
 

@@ -148,7 +148,7 @@ class Server {
 
             } else if (serverInfos.type === "reactjs") {
 
-                const server = new ReactJsServer(serverInfos.name, serverInfos.buikdDockerImage, serverInfos.deployment || null);
+                const server = new ReactJsServer(serverInfos.name, serverInfos.buildDockerImage, serverInfos.deployment || null);
                 if (!existsSync(join(homedir(), "servers", serverInfos.name)))
                     server.deploy();
             }
