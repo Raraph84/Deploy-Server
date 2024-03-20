@@ -145,6 +145,12 @@ class Server {
                 const server = new WebsiteServer(serverInfos.name, serverInfos.deployment || null);
                 if (!existsSync(join(homedir(), "servers", serverInfos.name)))
                     server.deploy();
+
+            } else if (serverInfos.type === "reactjs") {
+
+                const server = new ReactJsServer(serverInfos.name, serverInfos.buikdDockerImage, serverInfos.deployment || null);
+                if (!existsSync(join(homedir(), "servers", serverInfos.name)))
+                    server.deploy();
             }
         }
     }
@@ -370,10 +376,45 @@ class PythonServer extends DockerServer {
     }
 }
 
+class ReactJsServer extends Server {
+
+    /**
+     * @param {string} name 
+     * @param {string} buildDockerImage 
+     * @param {object} deployment 
+     */
+    constructor(name, buildDockerImage, deployment) {
+
+        super(name);
+
+        this.buildDockerImage = buildDockerImage;
+        this.deployment = deployment;
+    }
+
+    async deploy() {
+
+        if (!this.deployment) return;
+
+        const command = `${__dirname}/../deployReactJs.sh ${this.name} ${this.deployment.githubRepo}/${this.deployment.githubBranch} ${this.deployment.githubAuth || "none"} ${this.buildDockerImage} ${(this.deployment.ignoredFiles || []).join(":")}`;
+
+        console.log("Deploying " + this.name + " with command " + command);
+
+        try {
+            await run(command);
+        } catch (error) {
+            console.log("Error deploying " + this.name + " :", error);
+            return;
+        }
+
+        console.log("Deployed " + this.name);
+    }
+}
+
 module.exports = {
     Server,
-    WebsiteServer,
     DockerServer,
+    WebsiteServer,
     NodeJsServer,
-    PythonServer
+    PythonServer,
+    ReactJsServer
 }

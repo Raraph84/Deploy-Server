@@ -48,6 +48,16 @@
                 "githubBranch": "newfeature",
                 "githubAuth": "ghp_MY_GITHUB_ACCESS_TOKEN"
             }
+        },
+        {
+            "name": "My-ReactJs-Website",
+            "type": "reactjs",
+            "buildDockerImage": "mynode:20",
+            "deployment": {
+                "githubRepo": "MyGitHubUser/MyWebsiteRepo",
+                "githubBranch": "main",
+                "githubAuth": "ghp_MY_GITHUB_ACCESS_TOKEN"
+            }
         }
     ]
 }

@@ -1,5 +1,5 @@
 const { getConfig, HttpServer } = require("raraph84-lib");
-const { Server, NodeJsServer, WebsiteServer } = require("./Server");
+const { Server } = require("./Server");
 const Config = getConfig(__dirname + "/..");
 
 /** @param {import("raraph84-lib/src/HttpServer")} */
@@ -24,8 +24,7 @@ module.exports.start = async () => {
             return;
         }
 
-        const server = Server.servers.find((server) => (server instanceof NodeJsServer || server instanceof WebsiteServer)
-            && server.deployment && server.deployment.githubRepo === message.repository.full_name && server.deployment.githubBranch === message.ref.split("/").pop());
+        const server = Server.servers.find((server) => server.deployment && server.deployment.githubRepo === message.repository.full_name && server.deployment.githubBranch === message.ref.split("/").pop());
         if (!server) {
             request.end(401, "Repository or branch not authorized");
             return;

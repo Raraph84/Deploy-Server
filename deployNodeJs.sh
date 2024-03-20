@@ -9,33 +9,33 @@ SPLITTED_REPOSITORY=(${2//\// })
 USER=${SPLITTED_REPOSITORY[0]}
 REPO=${SPLITTED_REPOSITORY[1]}
 BRANCH=${SPLITTED_REPOSITORY[2]}
-TEMPFOLDER=$(mktemp -d)
-SERVERFOLDER=~/servers/$1
+TEMP_FOLDER=$(mktemp -d)
+SERVER_FOLDER=~/servers/$1
 DOCKER_IMAGE=$4
-IFS=':' && read -ra IGNOREDFILES <<<$5 && IFS=' '
+IFS=':' && read -ra IGNORED_FILES <<<$5 && IFS=' '
 
-git clone https://$3@github.com/$USER/$REPO -b $BRANCH $TEMPFOLDER
-rm -rf $TEMPFOLDER/.git
+git clone https://$3@github.com/$USER/$REPO -b $BRANCH $TEMP_FOLDER
+rm -rf $TEMP_FOLDER/.git
 
-if [ -e $TEMPFOLDER/package.json ]; then
-    cd $TEMPFOLDER
-    if [ -e $SERVERFOLDER/package.json ] && [ -e $SERVERFOLDER/node_modules ]; then
-        if [ -z "$(cmp $TEMPFOLDER/package.json $SERVERFOLDER/package.json)" ]; then
-            cp -r $SERVERFOLDER/node_modules $TEMPFOLDER
+if [ -e $TEMP_FOLDER/package.json ]; then
+    cd $TEMP_FOLDER
+    if [ -e $SERVER_FOLDER/package.json ] && [ -e $SERVER_FOLDER/node_modules ]; then
+        if [ -z "$(cmp $TEMP_FOLDER/package.json $SERVER_FOLDER/package.json)" ]; then
+            cp -r $SERVER_FOLDER/node_modules $TEMP_FOLDER
         else
-            docker run --rm -i -v $TEMPFOLDER:/home/server $DOCKER_IMAGE npm install --omit=dev
+            docker run --rm -i -v $TEMP_FOLDER:/home/server $DOCKER_IMAGE npm install --omit=dev
         fi
     else
-        docker run --rm -i -v $TEMPFOLDER:/home/server $DOCKER_IMAGE npm install --omit=dev
+        docker run --rm -i -v $TEMP_FOLDER:/home/server $DOCKER_IMAGE npm install --omit=dev
     fi
 fi
 
-for IGNOREDFILE in "${IGNOREDFILES[@]}"; do
-    if [ -e $SERVERFOLDER/$IGNOREDFILE ]; then
-        rm -rf $TEMPFOLDER/$IGNOREDFILE
-        cp -r $SERVERFOLDER/$IGNOREDFILE $TEMPFOLDER/$IGNOREDFILE
+for IGNORED_FILE in "${IGNORED_FILES[@]}"; do
+    if [ -e $SERVER_FOLDER/$IGNORED_FILE ]; then
+        rm -rf $TEMP_FOLDER/$IGNORED_FILE
+        cp -r $SERVER_FOLDER/$IGNORED_FILE $TEMP_FOLDER/$IGNORED_FILE
     fi
 done
 
-rm -rf $SERVERFOLDER
-mv $TEMPFOLDER $SERVERFOLDER
+rm -rf $SERVER_FOLDER
+mv $TEMP_FOLDER $SERVER_FOLDER
