@@ -9,19 +9,19 @@ SPLITTED_REPOSITORY=(${2//\// })
 USER=${SPLITTED_REPOSITORY[0]}
 REPO=${SPLITTED_REPOSITORY[1]}
 BRANCH=${SPLITTED_REPOSITORY[2]}
-TEMP_FOLDER=$(mktemp -d)
-SERVER_FOLDER=~/servers/$1
+TEMP_DIR=$(mktemp -d)
+SERVER_DIR=~/servers/$1
 IFS=':' && read -ra IGNORED_FILES <<<$4 && IFS=' '
 
-git clone https://$3@github.com/$USER/$REPO -b $BRANCH $TEMP_FOLDER
-rm -rf $TEMP_FOLDER/.git
+git clone https://$3@github.com/$USER/$REPO -b $BRANCH $TEMP_DIR
+rm -rf $TEMP_DIR/.git
 
 for IGNORED_FILE in "${IGNORED_FILES[@]}"; do
-    if [ -e $SERVER_FOLDER/$IGNORED_FILE ]; then
-        rm -rf $TEMP_FOLDER/$IGNORED_FILE
-        cp -r $SERVER_FOLDER/$IGNORED_FILE $TEMP_FOLDER/$IGNORED_FILE
+    if [ -e $SERVER_DIR/$IGNORED_FILE ]; then
+        rm -rf $TEMP_DIR/$IGNORED_FILE
+        cp -r $SERVER_DIR/$IGNORED_FILE $TEMP_DIR/$IGNORED_FILE
     fi
 done
 
-rm -rf $SERVER_FOLDER
-mv $TEMP_FOLDER $SERVER_FOLDER
+rm -rf $SERVER_DIR
+mv $TEMP_DIR $SERVER_DIR
