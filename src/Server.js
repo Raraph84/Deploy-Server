@@ -230,7 +230,7 @@ class DockerServer extends Server {
         });
         this.container.inspect().then((infos) => {
             const startDate = new Date(infos.State.StartedAt).getTime();
-            this.log("[raraph.fr] Starting...", startDate);
+            this.log("[AutoDeploy] Starting...", startDate);
             this.logsListener.listen(startDate);
         });
     }
@@ -291,7 +291,7 @@ class NodeJsServer extends DockerServer {
     async deploy() {
 
         this.state = "deploying";
-        this.log("[raraph.fr] Deploying...");
+        this.log("[AutoDeploy] Deploying...");
 
         try {
             await this.container.stop({ t: 3 });
@@ -343,7 +343,7 @@ class PythonServer extends DockerServer {
     async deploy() {
 
         this.state = "deploying";
-        this.log("[raraph.fr] Deploying...");
+        this.log("[AutoDeploy] Deploying...");
 
         try {
             await this.container.stop({ t: 3 });
