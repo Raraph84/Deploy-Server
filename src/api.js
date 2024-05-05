@@ -1,6 +1,6 @@
 const { getConfig, HttpServer } = require("raraph84-lib");
 const { Server } = require("./Server");
-const Config = getConfig(__dirname + "/..");
+const config = getConfig(__dirname + "/..");
 
 /** @param {import("raraph84-lib/src/HttpServer")} */
 let api;
@@ -35,8 +35,8 @@ module.exports.start = async () => {
     });
 
     console.log("Lancement du serveur HTTP...");
-    await api.listen(Config.apiPort);
-    console.log("Serveur HTTP lancé sur le port " + Config.apiPort + " !");
+    await api.listen(config.apiPort);
+    console.log("Serveur HTTP lancé sur le port " + config.apiPort + " !");
 }
 
 module.exports.stop = async () => {

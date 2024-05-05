@@ -4,7 +4,7 @@ const { mkdirSync, existsSync } = require("fs");
 const { spawn } = require("child_process");
 const { getConfig, DockerLogsListener } = require("raraph84-lib");
 const Docker = require("dockerode");
-const Config = getConfig(__dirname + "/..");
+const config = getConfig(__dirname + "/..");
 
 const run = (command) => new Promise((resolve, reject) => {
     const proc = spawn(command.split(" ")[0], command.split(" ").slice(1));
@@ -39,7 +39,7 @@ class Server {
         const docker = new Docker();
         const containers = await docker.listContainers({ all: true });
 
-        for (const serverInfos of Config.servers) {
+        for (const serverInfos of config.servers.sort((a, b) => a.name.localeCompare(b.name))) {
 
             if (serverInfos.type === "nodejs") {
 

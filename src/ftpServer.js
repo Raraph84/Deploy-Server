@@ -1,7 +1,7 @@
 const { createLogger } = require("bunyan");
 const { FtpSrv, ftpErrors } = require("ftp-srv");
 const { getConfig } = require("raraph84-lib");
-const Config = getConfig(__dirname + "/..");
+const config = getConfig(__dirname + "/..");
 
 /** @type {import("ftp-srv").FtpSrv} */
 let ftpServer;
@@ -28,15 +28,15 @@ module.exports.start = async () => {
                 }
             }
         }),
-        url: "ftp://[::]:" + Config.ftpPort,
+        url: "ftp://[::]:" + config.ftpPort,
         pasv_url: passiveUrl,
-        pasv_min: Config.ftpPassiveMinPort,
-        pasv_max: Config.ftpPassiveMaxPort
+        pasv_min: config.ftpPassiveMinPort,
+        pasv_max: config.ftpPassiveMaxPort
     });
 
     ftpServer.on("login", (data, resolve, reject) => {
 
-        const user = Config.ftpCredentials[data.username];
+        const user = config.ftpCredentials[data.username];
 
         if (!user || user.password !== data.password)
             return reject(new ftpErrors.GeneralError("Invalid username or password", 401));

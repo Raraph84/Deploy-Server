@@ -1,6 +1,6 @@
 const { getConfig, WebSocketServer } = require("raraph84-lib");
 const { Server, DockerServer } = require("./Server");
-const Config = getConfig(__dirname + "/..");
+const config = getConfig(__dirname + "/..");
 
 /** @param {import("raraph84-lib/src/WebSocketServer")} */
 let gateway;
@@ -36,7 +36,7 @@ module.exports.start = async () => {
                 return;
             }
 
-            if (message.token !== Config.token) {
+            if (message.token !== config.token) {
                 client.close("Invalid token");
                 return;
             }
@@ -69,7 +69,7 @@ module.exports.start = async () => {
 
     console.log("Lancement du serveur WebSocket...");
 
-    await gateway.listen(Config.gatewayPort);
+    await gateway.listen(config.gatewayPort);
 
     heartbeatInterval = setInterval(() => {
 
@@ -86,7 +86,7 @@ module.exports.start = async () => {
 
     }, 30 * 1000);
 
-    console.log("Serveur WebSocket lancé sur le port " + Config.gatewayPort + " !");
+    console.log("Serveur WebSocket lancé sur le port " + config.gatewayPort + " !");
 
     return gateway;
 }

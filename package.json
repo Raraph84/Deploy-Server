@@ -8,6 +8,6 @@
   "dependencies": {
     "dockerode": "^4.0.2",
     "ftp-srv": "^4.6.3",
-    "raraph84-lib": "^2.17.0"
+    "raraph84-lib": "^2.17.1"
   }
 }
