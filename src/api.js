@@ -24,13 +24,15 @@ module.exports.start = async () => {
             return;
         }
 
-        const server = Server.servers.find((server) => server.deployment && server.deployment.githubRepo === message.repository.full_name && server.deployment.githubBranch === message.ref.split("/").pop());
-        if (!server) {
+        const servers = Server.servers.filter((server) => server.deployment && server.deployment.githubRepo === message.repository.full_name && server.deployment.githubBranch === message.ref.split("/").pop());
+        if (!servers[0]) {
             request.end(401, "Repository or branch not authorized");
             return;
         }
 
-        server.deploy();
+        for (const server of servers)
+            server.deploy();
+
         request.end(204);
     });
 
