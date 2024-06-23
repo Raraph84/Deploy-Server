@@ -1,6 +1,6 @@
 {
   "name": "deploy-server",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "An auto-deployment server for NodeJS projects and websites",
   "main": "index.js",
   "author": "Raraph84",
