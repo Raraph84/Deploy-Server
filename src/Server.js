@@ -1,6 +1,6 @@
 const { homedir } = require("os");
 const { join } = require("path");
-const { mkdirSync, existsSync } = require("fs");
+const { existsSync, promises: fs } = require("fs");
 const { spawn } = require("child_process");
 const { getConfig, DockerLogsListener } = require("raraph84-lib");
 const Docker = require("dockerode");
@@ -27,6 +27,7 @@ class Server {
 
         this.id = Server.servers.length;
         this.name = name;
+        this.type = "unknown";
 
         Server.servers.push(this);
     }
@@ -51,7 +52,7 @@ class Server {
 
                     if (container.State === "running") {
                         server.listenLogs();
-                        server.state = "started";
+                        server.setState("started");
                     } else {
                         server.deploy();
                     }
@@ -59,7 +60,7 @@ class Server {
                 } else {
 
                     if (!existsSync(join(homedir(), "servers", serverInfos.name)))
-                        mkdirSync(join(homedir(), "servers", serverInfos.name));
+                        await fs.mkdir(join(homedir(), "servers", serverInfos.name));
 
                     const container = await docker.createContainer({
                         Tty: true,
@@ -101,7 +102,7 @@ class Server {
 
                     if (container.State === "running") {
                         server.listenLogs();
-                        server.state = "started";
+                        server.setState("started");
                     } else {
                         server.deploy();
                     }
@@ -109,7 +110,7 @@ class Server {
                 } else {
 
                     if (!existsSync(join(homedir(), "servers", serverInfos.name)))
-                        mkdirSync(join(homedir(), "servers", serverInfos.name));
+                        await fs.mkdir(join(homedir(), "servers", serverInfos.name));
 
                     const container = await docker.createContainer({
                         Tty: true,
@@ -166,6 +167,7 @@ class WebsiteServer extends Server {
 
         super(name);
 
+        this.type = "website";
         this.deployment = deployment;
     }
 
@@ -213,7 +215,7 @@ class DockerServer extends Server {
 
         this.#gateway = gateway;
 
-        this.#gateway.clients.filter((client) => client.infos.logged).forEach((client) => client.emitEvent("SERVER", { name: this.name, id: this.id }));
+        this.#gateway.clients.filter((client) => client.infos.logged).forEach((client) => client.emitEvent("SERVER", { id: this.id, name: this.name, type: this.type, state: this.state }));
     }
 
     log(line, date) {
@@ -235,12 +237,17 @@ class DockerServer extends Server {
         });
     }
 
+    setState(state) {
+        this.state = state;
+        this.#gateway.clients.filter((client) => client.infos.logged).forEach((client) => client.emitEvent("SERVER_STATE", { serverId: this.id, state: this.state }));
+    }
+
     async start() {
 
         if (this.state !== "stopped")
             throw "Server is not stopped";
 
-        this.state = "starting";
+        this.setState("starting");
         await this.container.start();
     }
 
@@ -249,7 +256,7 @@ class DockerServer extends Server {
         if (this.state !== "started")
             throw "Server is not started";
 
-        this.state = "stopping";
+        this.setState("stopping");
         await this.container.stop({ t: 3 });
     }
 
@@ -258,7 +265,7 @@ class DockerServer extends Server {
         if (this.state !== "started" && this.state !== "stopping")
             throw "Server is not started";
 
-        this.state = "stopping";
+        this.setState("stopping");
         await this.container.kill();
     }
 
@@ -267,7 +274,7 @@ class DockerServer extends Server {
         if (this.state !== "started")
             throw "Server is not started";
 
-        this.state = "restarting";
+        this.setState("restarting");
         await this.container.stop({ t: 3 });
     }
 }
@@ -285,12 +292,13 @@ class NodeJsServer extends DockerServer {
 
         super(name, container, gateway, dockerImage);
 
+        this.type = "nodejs";
         this.deployment = deployment;
     }
 
     async deploy() {
 
-        this.state = "deploying";
+        this.setState("deploying");
         this.log("[AutoDeploy] Deploying...");
 
         try {
@@ -337,12 +345,13 @@ class PythonServer extends DockerServer {
 
         super(name, container, dockerImage, gateway);
 
+        this.type = "python";
         this.deployment = deployment;
     }
 
     async deploy() {
 
-        this.state = "deploying";
+        this.setState("deploying");
         this.log("[AutoDeploy] Deploying...");
 
         try {
@@ -387,6 +396,7 @@ class ReactJsServer extends Server {
 
         super(name);
 
+        this.type = "reactjs";
         this.buildDockerImage = buildDockerImage;
         this.deployment = deployment;
     }

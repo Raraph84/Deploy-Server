@@ -20,18 +20,19 @@ module.exports.start = async () => {
         if (event.Action === "start") {
 
             server.listenLogs();
-            server.state = "started";
+            server.setState("started");
 
         } else if (event.Action === "die") {
 
             server.logsListener.close();
 
-            if (server.state === "started") {
+            if (server.state === "started" || server.state === "restarting") {
                 server.log("[AutoDeploy] Process exited with code " + event.Actor.Attributes.exitCode + ". Restarting in 3 seconds...", Math.floor(event.timeNano / 1000000));
-                server.state = "restarting";
-                setTimeout(() => {
-                    if (server.state === "restarting") server.container.start().catch(() => { });
-                }, 3000);
+                server.setState("restarting");
+                setTimeout(() => { if (server.state === "restarting") server.container.start().catch(() => { }); }, 3000);
+            } else {
+                server.log("[AutoDeploy] Process exited with code " + event.Actor.Attributes.exitCode + ".");
+                server.setState("stopped");
             }
         }
     });
