@@ -50,13 +50,17 @@
             }
         },
         {
-            "name": "My-ReactJs-Website",
+            "name": "Deploy-Server-Website",
             "type": "reactjs",
             "buildDockerImage": "mynode:20",
             "deployment": {
-                "githubRepo": "MyGitHubUser/MyWebsiteRepo",
+                "githubRepo": "Raraph84/Deploy-Server-Frontend",
                 "githubBranch": "main",
-                "githubAuth": "ghp_MY_GITHUB_ACCESS_TOKEN"
+                "ignoredFiles": [
+                    ".env",
+                    ".htaccess",
+                    ".htpasswd"
+                ]
             }
         }
     ]
