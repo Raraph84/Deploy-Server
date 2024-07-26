@@ -30,7 +30,7 @@ module.exports.start = async () => {
                 server.log("[AutoDeploy] Process exited with code " + event.Actor.Attributes.exitCode + ". Restarting in 3 seconds...", Math.floor(event.timeNano / 1000000));
                 server.setState("restarting");
                 setTimeout(() => { if (server.state === "restarting") server.container.start().catch(() => { }); }, 3000);
-            } else {
+            } else if (server.state !== "deploying") {
                 server.log("[AutoDeploy] Process exited with code " + event.Actor.Attributes.exitCode + ".");
                 server.setState("stopped");
             }
