@@ -50,6 +50,16 @@
             }
         },
         {
+            "name": "My-NextJs-Website",
+            "type": "nextjs",
+            "port": 8080,
+            "deployment": {
+                "githubRepo": "MyGitHubUser/MyNextJsWebsiteRepo",
+                "githubBranch": "dev",
+                "githubAuth": "ghp_MY_GITHUB_ACCESS_TOKEN"
+            }
+        },
+        {
             "name": "Deploy-Server-Website",
             "type": "reactjs",
             "buildDockerImage": "mynode:20",

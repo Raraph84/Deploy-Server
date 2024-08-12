@@ -48,7 +48,7 @@ class Server {
 
                 if (container) {
 
-                    const server = new NodeJsServer(serverInfos.name, docker.getContainer(container.Id), gateway, serverInfos.dockerImage, serverInfos.deployment || null);
+                    const server = new NodeJsServer(serverInfos.name, docker.getContainer(container.Id), gateway, serverInfos.dockerImage, serverInfos.deployment ?? null);
 
                     if (container.State === "running") {
                         server.listenLogs();
@@ -88,7 +88,7 @@ class Server {
                         Cmd: ["node", serverInfos.mainFile || "index.js"]
                     });
 
-                    const server = new NodeJsServer(serverInfos.name, container, gateway, serverInfos.dockerImage, serverInfos.deployment || null);
+                    const server = new NodeJsServer(serverInfos.name, container, gateway, serverInfos.dockerImage, serverInfos.deployment ?? null);
                     server.deploy();
                 }
 
@@ -98,7 +98,7 @@ class Server {
 
                 if (container) {
 
-                    const server = new PythonServer(serverInfos.name, docker.getContainer(container.Id), gateway, serverInfos.dockerImage, serverInfos.deployment || null);
+                    const server = new PythonServer(serverInfos.name, docker.getContainer(container.Id), gateway, serverInfos.dockerImage, serverInfos.deployment ?? null);
 
                     if (container.State === "running") {
                         server.listenLogs();
@@ -137,21 +137,59 @@ class Server {
                         Cmd: "if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi && python " + (serverInfos.mainFile || "main.py")
                     });
 
-                    const server = new PythonServer(serverInfos.name, container, gateway, serverInfos.dockerImage, serverInfos.deployment || null);
+                    const server = new PythonServer(serverInfos.name, container, gateway, serverInfos.dockerImage, serverInfos.deployment ?? null);
                     server.deploy();
                 }
 
             } else if (serverInfos.type === "website") {
 
-                const server = new WebsiteServer(serverInfos.name, serverInfos.deployment || null);
+                const server = new WebsiteServer(serverInfos.name, serverInfos.deployment ?? null);
                 if (!existsSync(join(homedir(), "servers", serverInfos.name)))
                     server.deploy();
 
             } else if (serverInfos.type === "reactjs") {
 
-                const server = new ReactJsServer(serverInfos.name, serverInfos.buildDockerImage, serverInfos.deployment || null);
+                const server = new ReactJsServer(serverInfos.name, serverInfos.buildDockerImage, serverInfos.deployment ?? null);
                 if (!existsSync(join(homedir(), "servers", serverInfos.name)))
                     server.deploy();
+            } else if (serverInfos.type === "nextjs") {
+
+                const container = containers.find((container) => container.Names[0] === "/" + serverInfos.name);
+
+                if (container) {
+
+                    const server = new NextJsServer(serverInfos.name, docker.getContainer(container.Id), gateway, serverInfos.dockerImage, serverInfos.deployment ?? null);
+
+                    if (container.State === "running") {
+                        server.listenLogs();
+                        server.setState("started");
+                    } else {
+                        server.deploy();
+                    }
+
+                } else {
+
+                    if (!existsSync(join(homedir(), "servers", serverInfos.name)))
+                        await fs.mkdir(join(homedir(), "servers", serverInfos.name));
+
+                    const container = await docker.createContainer({
+                        name: serverInfos.name,
+                        ExposedPorts: { "80/tcp": {} },
+                        Tty: true,
+                        OpenStdin: true,
+                        Cmd: ["npm", "start"],
+                        Image: serverInfos.dockerImage,
+                        HostConfig: {
+                            PortBindings: { "80/tcp": [{ HostIp: "127.0.0.1", HostPort: serverInfos.port.toString() }] },
+                            Binds: [join(homedir(), "servers", serverInfos.name) + ":/home/server"],
+                            LogConfig: { Type: "json-file", Config: { "max-size": "5m", "max-file": "2" } }
+                        },
+                        Env: Object.entries(serverInfos.environmentVariables || {}).map((environmentVariable) => environmentVariable[0] + "=" + environmentVariable[1])
+                    });
+
+                    const server = new NextJsServer(serverInfos.name, container, gateway, serverInfos.dockerImage, serverInfos.deployment ?? null);
+                    server.deploy();
+                }
             }
         }
     }
@@ -417,6 +455,59 @@ class ReactJsServer extends Server {
         }
 
         console.log("Deployed " + this.name);
+    }
+}
+
+class NextJsServer extends DockerServer {
+
+    /**
+     * @param {string} name 
+     * @param {import("dockerode").Container} container 
+     * @param {import("raraph84-lib/src/WebSocketServer")} gateway 
+     * @param {string} dockerImage 
+     * @param {object} deployment 
+     */
+    constructor(name, container, gateway, dockerImage, deployment) {
+
+        super(name, container, gateway, dockerImage);
+
+        this.type = "nextjs";
+        this.deployment = deployment;
+    }
+
+    async deploy() {
+
+        this.setState("deploying");
+        this.log("[AutoDeploy] Deploying...");
+
+        try {
+            await this.container.stop({ t: 3 });
+        } catch (error) {
+        }
+
+        if (this.deployment) {
+
+            const command = `${__dirname}/../deployNextJs.sh ${this.name} ${this.deployment.githubRepo}/${this.deployment.githubBranch} ${this.deployment.githubAuth || "none"} ${this.dockerImage} ${(this.deployment.ignoredFiles || []).join(":")}`;
+
+            console.log("Deploying " + this.name + " with command " + command);
+
+            try {
+                await run(command);
+            } catch (error) {
+                console.log("Error deploying " + this.name + "  :", error);
+                return;
+            }
+
+            this.lastLogs = [];
+            await this.container.start();
+
+            console.log("Deployed " + this.name);
+
+        } else {
+
+            this.lastLogs = [];
+            await this.container.start();
+        }
     }
 }
 

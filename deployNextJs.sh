@@ -11,11 +11,11 @@ REPO=${SPLITTED_REPOSITORY[1]}
 BRANCH=${SPLITTED_REPOSITORY[2]}
 TEMP_DIR=$(mktemp -d)
 WEBSITE_DIR=~/servers/$1
-BUILD_DOCKER_IMAGE=$4
+DOCKER_IMAGE=$4
 IFS=':' && read -ra IGNORED_FILES <<<$5 && IFS=' '
 
 git clone https://$3@github.com/$USER/$REPO -b $BRANCH $TEMP_DIR
-rm -rf $TEMP_DIR/.git $TEMP_DIR/build $TEMP_DIR/www
+rm -rf $TEMP_DIR/.git
 
 if [ -e $TEMP_DIR/package.json ]; then
     cd $TEMP_DIR
@@ -23,10 +23,10 @@ if [ -e $TEMP_DIR/package.json ]; then
         if [ -z "$(cmp $TEMP_DIR/package.json $WEBSITE_DIR/package.json)" ]; then
             cp -r $WEBSITE_DIR/node_modules $TEMP_DIR
         else
-            docker run --rm -i -v $TEMP_DIR:/home/server $BUILD_DOCKER_IMAGE npm install --omit=dev
+            docker run --rm -i -v $TEMP_DIR:/home/server $DOCKER_IMAGE npm install --omit=dev
         fi
     else
-        docker run --rm -i -v $TEMP_DIR:/home/server $BUILD_DOCKER_IMAGE npm install --omit=dev
+        docker run --rm -i -v $TEMP_DIR:/home/server $DOCKER_IMAGE npm install --omit=dev
     fi
 fi
 
@@ -37,8 +37,7 @@ for IGNORED_FILE in "${IGNORED_FILES[@]}"; do
     fi
 done
 
-docker run --rm -i -v $TEMP_DIR:/home/server $BUILD_DOCKER_IMAGE npm run build
-mv $TEMP_DIR/build $TEMP_DIR/www
+docker run --rm -i -v $TEMP_DIR:/home/server $DOCKER_IMAGE npm run build
 
 rm -rf $WEBSITE_DIR
 mv $TEMP_DIR $WEBSITE_DIR
