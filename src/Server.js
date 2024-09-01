@@ -231,11 +231,10 @@ class WebsiteServer extends Server {
         console.log("Deploying " + this.name + " with command " + command);
 
         try {
-            await run(command, (line) => this.log(line));
+            await run(command);
         } catch (error) {
             this.deploying = false;
             console.log("Error deploying " + this.name + " :", error);
-            this.log("[AutoDeploy] Error while deploying !");
             return;
         }
 
@@ -519,11 +518,10 @@ class ReactJsServer extends Server {
         console.log("Deploying " + this.name + " with command " + command);
 
         try {
-            await run(command, (line) => this.log(line));
+            await run(command);
         } catch (error) {
             this.deploying = false;
             console.log("Error deploying " + this.name + " :", error);
-            this.log("[AutoDeploy] Error while deploying !");
             return;
         }
 
