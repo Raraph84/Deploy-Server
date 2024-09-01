@@ -1,5 +1,6 @@
 const { TaskManager } = require("raraph84-lib");
-const { Server, DockerServer } = require("./src/Server");
+const Server = require("./src/Server");
+const DockerServer = require("./src/DockerServer");
 
 const tasks = new TaskManager();
 

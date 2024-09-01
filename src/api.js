@@ -1,5 +1,5 @@
 const { getConfig, HttpServer } = require("raraph84-lib");
-const { Server } = require("./Server");
+const Server = require("./Server");
 const config = getConfig(__dirname + "/..");
 
 /** @param {import("raraph84-lib/src/HttpServer")} */

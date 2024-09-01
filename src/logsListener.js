@@ -1,6 +1,7 @@
-const Docker = require("dockerode");
 const { DockerEventListener } = require("raraph84-lib");
-const { Server, DockerServer } = require("./Server");
+const Docker = require("dockerode");
+const Server = require("./Server");
+const DockerServer = require("./DockerServer");
 
 /** @type {import("raraph84-lib/src/DockerEventListener")} */
 let eventListener;

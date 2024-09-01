@@ -1,5 +1,6 @@
 const { getConfig, WebSocketServer } = require("raraph84-lib");
-const { Server, DockerServer } = require("./Server");
+const Server = require("./Server");
+const DockerServer = require("./DockerServer");
 const config = getConfig(__dirname + "/..");
 
 /** @param {import("raraph84-lib/src/WebSocketServer")} */
