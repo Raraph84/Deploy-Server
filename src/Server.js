@@ -6,12 +6,23 @@ const { getConfig, DockerLogsListener } = require("raraph84-lib");
 const Docker = require("dockerode");
 const config = getConfig(__dirname + "/..");
 
-const run = (command) => new Promise((resolve, reject) => {
+const run = (command, onLine) => new Promise((resolve, reject) => {
     const proc = spawn(command.split(" ")[0], command.split(" ").slice(1));
-    let out = "";
-    proc.stdout.on("data", (data) => out += data);
-    proc.stderr.on("data", (data) => out += data);
-    proc.on("close", (code) => code === 0 ? resolve(out) : reject(out));
+    let data = "";
+    let tempData = "";
+    const onData = (chunk) => {
+        data += chunk;
+        if (!onLine) return;
+        tempData += chunk;
+        while (tempData.includes("\n")) {
+            const split = tempData.split("\n");
+            onLine(split.shift());
+            tempData = split.join("\n");
+        }
+    };
+    proc.stdout.on("data", onData);
+    proc.stderr.on("data", onData);
+    proc.on("close", (code) => code === 0 ? resolve(data) : reject(data));
     proc.on("error", (error) => reject(error));
 });
 
@@ -28,6 +39,7 @@ class Server {
         this.id = Server.servers.length;
         this.name = name;
         this.type = "unknown";
+        this.deploying = false;
 
         Server.servers.push(this);
     }
@@ -211,19 +223,23 @@ class WebsiteServer extends Server {
 
     async deploy() {
 
-        if (!this.deployment) return;
+        if (!this.deployment || this.deploying) return;
+        this.deploying = true;
 
         const command = `${__dirname}/../deployWebsite.sh ${this.name} ${this.deployment.githubRepo}/${this.deployment.githubBranch} ${this.deployment.githubAuth || "none"} ${(this.deployment.ignoredFiles || []).join(":")}`;
 
         console.log("Deploying " + this.name + " with command " + command);
 
         try {
-            await run(command);
+            await run(command, (line) => this.log(line));
         } catch (error) {
+            this.deploying = false;
             console.log("Error deploying " + this.name + " :", error);
+            this.log("[AutoDeploy] Error while deploying !");
             return;
         }
 
+        this.deploying = false;
         console.log("Deployed " + this.name);
     }
 }
@@ -336,6 +352,9 @@ class NodeJsServer extends DockerServer {
 
     async deploy() {
 
+        if (this.deploying) return;
+        this.deploying = true;
+
         this.setState("deploying");
         this.log("[AutoDeploy] Deploying...");
 
@@ -351,9 +370,11 @@ class NodeJsServer extends DockerServer {
             console.log("Deploying " + this.name + " with command " + command);
 
             try {
-                await run(command);
+                await run(command, (line) => this.log(line));
             } catch (error) {
-                console.log("Error deploying " + this.name + "  :", error);
+                this.deploying = false;
+                console.log("Error deploying " + this.name + " :", error);
+                this.log("[AutoDeploy] Error while deploying !");
                 return;
             }
 
@@ -367,6 +388,8 @@ class NodeJsServer extends DockerServer {
             this.lastLogs = [];
             await this.container.start();
         }
+
+        this.deploying = false;
     }
 }
 
@@ -389,6 +412,9 @@ class PythonServer extends DockerServer {
 
     async deploy() {
 
+        if (this.deploying) return;
+        this.deploying = true;
+
         this.setState("deploying");
         this.log("[AutoDeploy] Deploying...");
 
@@ -404,9 +430,11 @@ class PythonServer extends DockerServer {
             console.log("Deploying " + this.name + " with command " + command);
 
             try {
-                await run(command);
+                await run(command, (line) => this.log(line));
             } catch (error) {
-                console.log("Error deploying " + this.name + "  :", error);
+                this.deploying = false;
+                console.log("Error deploying " + this.name + " :", error);
+                this.log("[AutoDeploy] Error while deploying !");
                 return;
             }
 
@@ -420,6 +448,8 @@ class PythonServer extends DockerServer {
             this.lastLogs = [];
             await this.container.start();
         }
+
+        this.deploying = false;
     }
 }
 
@@ -441,19 +471,23 @@ class ReactJsServer extends Server {
 
     async deploy() {
 
-        if (!this.deployment) return;
+        if (!this.deployment || this.deploying) return;
+        this.deploying = true;
 
         const command = `${__dirname}/../deployReactJs.sh ${this.name} ${this.deployment.githubRepo}/${this.deployment.githubBranch} ${this.deployment.githubAuth || "none"} ${this.buildDockerImage} ${(this.deployment.ignoredFiles || []).join(":")}`;
 
         console.log("Deploying " + this.name + " with command " + command);
 
         try {
-            await run(command);
+            await run(command, (line) => this.log(line));
         } catch (error) {
+            this.deploying = false;
             console.log("Error deploying " + this.name + " :", error);
+            this.log("[AutoDeploy] Error while deploying !");
             return;
         }
 
+        this.deploying = false;
         console.log("Deployed " + this.name);
     }
 }
@@ -477,6 +511,9 @@ class NextJsServer extends DockerServer {
 
     async deploy() {
 
+        if (this.deploying) return;
+        this.deploying = true;
+
         this.setState("deploying");
         this.log("[AutoDeploy] Deploying...");
 
@@ -492,9 +529,11 @@ class NextJsServer extends DockerServer {
             console.log("Deploying " + this.name + " with command " + command);
 
             try {
-                await run(command);
+                await run(command, (line) => this.log(line));
             } catch (error) {
-                console.log("Error deploying " + this.name + "  :", error);
+                this.deploying = false;
+                console.log("Error deploying " + this.name + " :", error);
+                this.log("[AutoDeploy] Error while deploying !");
                 return;
             }
 
@@ -508,6 +547,8 @@ class NextJsServer extends DockerServer {
             this.lastLogs = [];
             await this.container.start();
         }
+
+        this.deploying = false;
     }
 }
 
