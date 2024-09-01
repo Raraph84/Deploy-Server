@@ -1,8 +1,8 @@
 const { homedir } = require("os");
-const { join } = require("path");
 const { existsSync, promises: fs } = require("fs");
 const { spawn } = require("child_process");
 const { getConfig, DockerLogsListener } = require("raraph84-lib");
+const path = require("path");
 const Docker = require("dockerode");
 const config = getConfig(__dirname + "/..");
 
@@ -71,8 +71,8 @@ class Server {
 
                 } else {
 
-                    if (!existsSync(join(homedir(), "servers", serverInfos.name)))
-                        await fs.mkdir(join(homedir(), "servers", serverInfos.name));
+                    if (!existsSync(path.join(homedir(), "servers", serverInfos.name)))
+                        await fs.mkdir(path.join(homedir(), "servers", serverInfos.name));
 
                     const container = await docker.createContainer({
                         Tty: true,
@@ -82,7 +82,7 @@ class Server {
                             Mounts: [
                                 {
                                     Target: "/home/server",
-                                    Source: join(homedir(), "servers", serverInfos.name),
+                                    Source: path.join(homedir(), "servers", serverInfos.name),
                                     Type: "bind"
                                 }
                             ],
@@ -121,8 +121,8 @@ class Server {
 
                 } else {
 
-                    if (!existsSync(join(homedir(), "servers", serverInfos.name)))
-                        await fs.mkdir(join(homedir(), "servers", serverInfos.name));
+                    if (!existsSync(path.join(homedir(), "servers", serverInfos.name)))
+                        await fs.mkdir(path.join(homedir(), "servers", serverInfos.name));
 
                     const container = await docker.createContainer({
                         Tty: true,
@@ -132,7 +132,7 @@ class Server {
                             Mounts: [
                                 {
                                     Target: "/home/server",
-                                    Source: join(homedir(), "servers", serverInfos.name),
+                                    Source: path.join(homedir(), "servers", serverInfos.name),
                                     Type: "bind"
                                 }
                             ],
@@ -156,13 +156,13 @@ class Server {
             } else if (serverInfos.type === "website") {
 
                 const server = new WebsiteServer(serverInfos.name, serverInfos.deployment ?? null);
-                if (!existsSync(join(homedir(), "servers", serverInfos.name)))
+                if (!existsSync(path.join(homedir(), "servers", serverInfos.name)))
                     server.deploy();
 
             } else if (serverInfos.type === "reactjs") {
 
                 const server = new ReactJsServer(serverInfos.name, serverInfos.buildDockerImage, serverInfos.deployment ?? null);
-                if (!existsSync(join(homedir(), "servers", serverInfos.name)))
+                if (!existsSync(path.join(homedir(), "servers", serverInfos.name)))
                     server.deploy();
             } else if (serverInfos.type === "nextjs") {
 
@@ -181,8 +181,8 @@ class Server {
 
                 } else {
 
-                    if (!existsSync(join(homedir(), "servers", serverInfos.name)))
-                        await fs.mkdir(join(homedir(), "servers", serverInfos.name));
+                    if (!existsSync(path.join(homedir(), "servers", serverInfos.name)))
+                        await fs.mkdir(path.join(homedir(), "servers", serverInfos.name));
 
                     const container = await docker.createContainer({
                         name: serverInfos.name,
@@ -193,7 +193,7 @@ class Server {
                         Image: serverInfos.dockerImage,
                         HostConfig: {
                             PortBindings: { "80/tcp": [{ HostIp: "127.0.0.1", HostPort: serverInfos.port.toString() }] },
-                            Binds: [join(homedir(), "servers", serverInfos.name) + ":/home/server"],
+                            Binds: [path.join(homedir(), "servers", serverInfos.name) + ":/home/server"],
                             LogConfig: { Type: "json-file", Config: { "max-size": "5m", "max-file": "2" } }
                         },
                         Env: Object.entries(serverInfos.environmentVariables || {}).map((environmentVariable) => environmentVariable[0] + "=" + environmentVariable[1])
@@ -272,7 +272,7 @@ class DockerServer extends Server {
         this.#gateway.clients.filter((client) => client.infos.logged).forEach((client) => client.emitEvent("SERVER", { id: this.id, name: this.name, type: this.type, state: this.state }));
     }
 
-    log(line, date) {
+    log(line, date = Date.now()) {
         const log = { line, date };
         this.lastLogs.push(log);
         if (this.lastLogs.length > 500) this.lastLogs.shift();
@@ -284,6 +284,7 @@ class DockerServer extends Server {
         this.logsListener.on("output", (output, date) => {
             this.log(output.replace(/\x1B[[(?);]{0,2}(;?\d)*./g, ""), date.getTime());
         });
+        this.logsListener.on("error", (error) => console.log("Error while listening logs for " + this.name + " :", error));
         this.container.inspect().then((infos) => {
             const startDate = new Date(infos.State.StartedAt).getTime();
             this.log("[AutoDeploy] Starting...", startDate);
@@ -352,44 +353,83 @@ class NodeJsServer extends DockerServer {
 
     async deploy() {
 
-        if (this.deploying) return;
+        if (!this.deployment || this.deploying) return;
         this.deploying = true;
 
+        console.log("Deploying " + this.name + "...");
+
+        const oldState = this.state;
         this.setState("deploying");
         this.log("[AutoDeploy] Deploying...");
+
+        const tempDir = await fs.mkdtemp("/tmp/deploy-");
+        const serverDir = path.join(homedir(), "servers", this.name);
+
+        const rmrf = async (dir) => { if (existsSync(dir)) await fs.rm(dir, { recursive: true }); };
+
+        const onError = async (error) => {
+
+            this.deploying = false;
+
+            console.log("Error deploying " + this.name + " :", error);
+            this.log("[AutoDeploy] Error while deploying !");
+            this.setState(oldState);
+        };
+
+        try {
+            await run(`git clone https://${this.deployment.githubAuth || "none"}@github.com/${this.deployment.githubRepo} -b ${this.deployment.githubBranch} ${tempDir}`, (line) => this.log(line));
+        } catch (error) {
+            await onError(error);
+            return;
+        }
+
+        await rmrf(path.join(tempDir, ".git"));
+
+        if (existsSync(path.join(tempDir, "package.json"))) {
+
+            await rmrf(path.join(tempDir, "node_modules"));
+
+            try {
+                if (existsSync(path.join(serverDir, "package.json")) && existsSync(path.join(serverDir, "node_modules"))
+                    && await fs.readFile(path.join(tempDir, "package.json"), "utf8") === await fs.readFile(path.join(serverDir, "package.json"), "utf8"))
+                    await run(`cp -r ${path.join(serverDir, "node_modules")} ${tempDir}`, (line) => this.log(line));
+                else
+                    await run(`docker run --rm -i --name ${this.name}-Deploy -v ${tempDir}:/home/server ${this.dockerImage} npm install --omit=dev`, (line) => this.log(line));
+            } catch (error) {
+                await onError(error);
+                return;
+            }
+        }
+
+        for (const ignoredFile of (this.deployment.ignoredFiles || [])) {
+            if (existsSync(path.join(serverDir, ignoredFile))) {
+                await rmrf(path.join(tempDir, ignoredFile));
+                try {
+                    await run(`cp -r ${path.join(serverDir, ignoredFile)} ${tempDir}`, (line) => this.log(line));
+                } catch (error) {
+                    await onError(error);
+                    return;
+                }
+            }
+        }
+
+        await rmrf(serverDir + "-old");
 
         try {
             await this.container.stop({ t: 3 });
         } catch (error) {
         }
 
-        if (this.deployment) {
+        await fs.rename(serverDir, serverDir + "-old");
+        await fs.rename(tempDir, serverDir);
 
-            const command = `${__dirname}/../deployNodeJs.sh ${this.name} ${this.deployment.githubRepo}/${this.deployment.githubBranch} ${this.deployment.githubAuth || "none"} ${this.dockerImage} ${(this.deployment.ignoredFiles || []).join(":")}`;
+        this.lastLogs = [];
+        await this.container.start();
 
-            console.log("Deploying " + this.name + " with command " + command);
-
-            try {
-                await run(command, (line) => this.log(line));
-            } catch (error) {
-                this.deploying = false;
-                console.log("Error deploying " + this.name + " :", error);
-                this.log("[AutoDeploy] Error while deploying !");
-                return;
-            }
-
-            this.lastLogs = [];
-            await this.container.start();
-
-            console.log("Deployed " + this.name);
-
-        } else {
-
-            this.lastLogs = [];
-            await this.container.start();
-        }
+        await rmrf(serverDir + "-old");
 
         this.deploying = false;
+        console.log("Deployed " + this.name);
     }
 }
 
@@ -511,44 +551,90 @@ class NextJsServer extends DockerServer {
 
     async deploy() {
 
-        if (this.deploying) return;
+        if (!this.deployment || this.deploying) return;
         this.deploying = true;
 
+        console.log("Deploying " + this.name + "...");
+
+        const oldState = this.state;
         this.setState("deploying");
         this.log("[AutoDeploy] Deploying...");
+
+        const tempDir = await fs.mkdtemp("/tmp/deploy-");
+        const serverDir = path.join(homedir(), "servers", this.name);
+
+        const rmrf = async (dir) => { if (existsSync(dir)) await fs.rm(dir, { recursive: true }); };
+
+        const onError = async (error) => {
+
+            this.deploying = false;
+
+            console.log("Error deploying " + this.name + " :", error);
+            this.log("[AutoDeploy] Error while deploying !");
+            this.setState(oldState);
+        };
+
+        try {
+            await run(`git clone https://${this.deployment.githubAuth || "none"}@github.com/${this.deployment.githubRepo} -b ${this.deployment.githubBranch} ${tempDir}`, (line) => this.log(line));
+        } catch (error) {
+            await onError(error);
+            return;
+        }
+
+        await rmrf(path.join(tempDir, ".git"));
+
+        if (existsSync(path.join(tempDir, "package.json"))) {
+
+            await rmrf(path.join(tempDir, "node_modules"));
+
+            try {
+                if (existsSync(path.join(serverDir, "package.json")) && existsSync(path.join(serverDir, "node_modules"))
+                    && await fs.readFile(path.join(tempDir, "package.json"), "utf8") === await fs.readFile(path.join(serverDir, "package.json"), "utf8"))
+                    await run(`cp -r ${path.join(serverDir, "node_modules")} ${tempDir}`, (line) => this.log(line));
+                else
+                    await run(`docker run --rm -i --name ${this.name}-Deploy -v ${tempDir}:/home/server ${this.dockerImage} npm install --omit=dev`, (line) => this.log(line));
+            } catch (error) {
+                await onError(error);
+                return;
+            }
+        }
+
+        for (const ignoredFile of (this.deployment.ignoredFiles || [])) {
+            if (existsSync(path.join(serverDir, ignoredFile))) {
+                await rmrf(path.join(tempDir, ignoredFile));
+                try {
+                    await run(`cp -r ${path.join(serverDir, ignoredFile)} ${tempDir}`, (line) => this.log(line));
+                } catch (error) {
+                    await onError(error);
+                    return;
+                }
+            }
+        }
+
+        try {
+            await run(`docker run --rm -i --name ${this.name}-Deploy -v ${tempDir}:/home/server ${this.dockerImage} npm run build`, (line) => this.log(line));
+        } catch (error) {
+            await onError(error);
+            return;
+        }
+
+        await rmrf(serverDir + "-old");
 
         try {
             await this.container.stop({ t: 3 });
         } catch (error) {
         }
 
-        if (this.deployment) {
+        await fs.rename(serverDir, serverDir + "-old");
+        await fs.rename(tempDir, serverDir);
 
-            const command = `${__dirname}/../deployNextJs.sh ${this.name} ${this.deployment.githubRepo}/${this.deployment.githubBranch} ${this.deployment.githubAuth || "none"} ${this.dockerImage} ${(this.deployment.ignoredFiles || []).join(":")}`;
+        this.lastLogs = [];
+        await this.container.start();
 
-            console.log("Deploying " + this.name + " with command " + command);
-
-            try {
-                await run(command, (line) => this.log(line));
-            } catch (error) {
-                this.deploying = false;
-                console.log("Error deploying " + this.name + " :", error);
-                this.log("[AutoDeploy] Error while deploying !");
-                return;
-            }
-
-            this.lastLogs = [];
-            await this.container.start();
-
-            console.log("Deployed " + this.name);
-
-        } else {
-
-            this.lastLogs = [];
-            await this.container.start();
-        }
+        await rmrf(serverDir + "-old");
 
         this.deploying = false;
+        console.log("Deployed " + this.name);
     }
 }
 
