@@ -451,7 +451,7 @@ class PythonServer extends DockerServer {
 
     async deploy() {
 
-        if (this.deploying) return;
+        if (!this.deployment || this.deploying) return;
         this.deploying = true;
 
         this.setState("deploying");
@@ -462,33 +462,24 @@ class PythonServer extends DockerServer {
         } catch (error) {
         }
 
-        if (this.deployment) {
+        const command = `${__dirname}/../deployPython.sh ${this.name} ${this.deployment.githubRepo}/${this.deployment.githubBranch} ${this.deployment.githubAuth || "none"} ${(this.deployment.ignoredFiles || []).join(":")}`;
 
-            const command = `${__dirname}/../deployPython.sh ${this.name} ${this.deployment.githubRepo}/${this.deployment.githubBranch} ${this.deployment.githubAuth || "none"} ${(this.deployment.ignoredFiles || []).join(":")}`;
+        console.log("Deploying " + this.name + " with command " + command);
 
-            console.log("Deploying " + this.name + " with command " + command);
-
-            try {
-                await run(command, (line) => this.log(line));
-            } catch (error) {
-                this.deploying = false;
-                console.log("Error deploying " + this.name + " :", error);
-                this.log("[AutoDeploy] Error while deploying !");
-                return;
-            }
-
-            this.lastLogs = [];
-            await this.container.start();
-
-            console.log("Deployed " + this.name);
-
-        } else {
-
-            this.lastLogs = [];
-            await this.container.start();
+        try {
+            await run(command, (line) => this.log(line));
+        } catch (error) {
+            this.deploying = false;
+            console.log("Error deploying " + this.name + " :", error);
+            this.log("[AutoDeploy] Error while deploying !");
+            return;
         }
 
+        this.lastLogs = [];
+        await this.container.start();
+
         this.deploying = false;
+        console.log("Deployed " + this.name);
     }
 }
 
