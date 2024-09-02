@@ -1,28 +1,8 @@
-const { homedir } = require("os");
 const { existsSync, promises: fs } = require("fs");
-const { spawn } = require("child_process");
-const path = require("path");
+const { runCommand } = require("./utils");
 const DockerServer = require("./DockerServer");
-
-const run = (command, onLine) => new Promise((resolve, reject) => {
-    const proc = spawn(command.split(" ")[0], command.split(" ").slice(1));
-    let data = "";
-    let tempData = "";
-    const onData = (chunk) => {
-        data += chunk;
-        if (!onLine) return;
-        tempData += chunk;
-        while (tempData.includes("\n")) {
-            const split = tempData.split("\n");
-            onLine(split.shift());
-            tempData = split.join("\n");
-        }
-    };
-    proc.stdout.on("data", onData);
-    proc.stderr.on("data", onData);
-    proc.on("close", (code) => code === 0 ? resolve(data) : reject(data));
-    proc.on("error", (error) => reject(error));
-});
+const os = require("os");
+const path = require("path");
 
 module.exports = class PythonServer extends DockerServer {
 
@@ -52,8 +32,8 @@ module.exports = class PythonServer extends DockerServer {
         this.setState("deploying");
         this.log("[AutoDeploy] Deploying...");
 
-        const tempDir = await fs.mkdtemp("/tmp/deploy-");
-        const serverDir = path.join(homedir(), "servers", this.name);
+        const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "deploy-"));
+        const serverDir = path.join(os.homedir(), "servers", this.name);
 
         const rmrf = async (dir) => { if (existsSync(dir)) await fs.rm(dir, { recursive: true }); };
 
@@ -67,7 +47,7 @@ module.exports = class PythonServer extends DockerServer {
         };
 
         try {
-            await run(`git clone https://${this.deployment.githubAuth || "none"}@github.com/${this.deployment.githubRepo} -b ${this.deployment.githubBranch} ${tempDir}`, (line) => this.log(line));
+            await runCommand(`git clone https://${this.deployment.githubAuth || "none"}@github.com/${this.deployment.githubRepo} -b ${this.deployment.githubBranch} ${tempDir}`, (line) => this.log(line));
         } catch (error) {
             await onError(error);
             return;
@@ -79,7 +59,7 @@ module.exports = class PythonServer extends DockerServer {
             if (existsSync(path.join(serverDir, ignoredFile))) {
                 await rmrf(path.join(tempDir, ignoredFile));
                 try {
-                    await run(`cp -r ${path.join(serverDir, ignoredFile)} ${tempDir}`, (line) => this.log(line));
+                    await runCommand(`cp -r ${path.join(serverDir, ignoredFile)} ${tempDir}`, (line) => this.log(line));
                 } catch (error) {
                     await onError(error);
                     return;

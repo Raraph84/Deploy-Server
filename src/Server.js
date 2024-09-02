@@ -1,7 +1,7 @@
-const { homedir } = require("os");
 const { existsSync, promises: fs } = require("fs");
 const { getConfig } = require("raraph84-lib");
 const Docker = require("dockerode");
+const os = require("os");
 const path = require("path");
 const config = getConfig(__dirname + "/..");
 
@@ -57,8 +57,8 @@ module.exports = class Server {
 
                 } else {
 
-                    if (!existsSync(path.join(homedir(), "servers", serverInfos.name)))
-                        await fs.mkdir(path.join(homedir(), "servers", serverInfos.name));
+                    if (!existsSync(path.join(os.homedir(), "servers", serverInfos.name)))
+                        await fs.mkdir(path.join(os.homedir(), "servers", serverInfos.name));
 
                     const container = await docker.createContainer({
                         Tty: true,
@@ -68,7 +68,7 @@ module.exports = class Server {
                             Mounts: [
                                 {
                                     Target: "/home/server",
-                                    Source: path.join(homedir(), "servers", serverInfos.name),
+                                    Source: path.join(os.homedir(), "servers", serverInfos.name),
                                     Type: "bind"
                                 }
                             ],
@@ -107,8 +107,8 @@ module.exports = class Server {
 
                 } else {
 
-                    if (!existsSync(path.join(homedir(), "servers", serverInfos.name)))
-                        await fs.mkdir(path.join(homedir(), "servers", serverInfos.name));
+                    if (!existsSync(path.join(os.homedir(), "servers", serverInfos.name)))
+                        await fs.mkdir(path.join(os.homedir(), "servers", serverInfos.name));
 
                     const container = await docker.createContainer({
                         Tty: true,
@@ -118,7 +118,7 @@ module.exports = class Server {
                             Mounts: [
                                 {
                                     Target: "/home/server",
-                                    Source: path.join(homedir(), "servers", serverInfos.name),
+                                    Source: path.join(os.homedir(), "servers", serverInfos.name),
                                     Type: "bind"
                                 }
                             ],
@@ -142,13 +142,13 @@ module.exports = class Server {
             } else if (serverInfos.type === "website") {
 
                 const server = new WebsiteServer(serverInfos.name, serverInfos.deployment ?? null);
-                if (!existsSync(path.join(homedir(), "servers", serverInfos.name)))
+                if (!existsSync(path.join(os.homedir(), "servers", serverInfos.name)))
                     server.deploy();
 
             } else if (serverInfos.type === "reactjs") {
 
                 const server = new ReactJsServer(serverInfos.name, serverInfos.buildDockerImage, serverInfos.deployment ?? null);
-                if (!existsSync(path.join(homedir(), "servers", serverInfos.name)))
+                if (!existsSync(path.join(os.homedir(), "servers", serverInfos.name)))
                     server.deploy();
             } else if (serverInfos.type === "nextjs") {
 
@@ -167,8 +167,8 @@ module.exports = class Server {
 
                 } else {
 
-                    if (!existsSync(path.join(homedir(), "servers", serverInfos.name)))
-                        await fs.mkdir(path.join(homedir(), "servers", serverInfos.name));
+                    if (!existsSync(path.join(os.homedir(), "servers", serverInfos.name)))
+                        await fs.mkdir(path.join(os.homedir(), "servers", serverInfos.name));
 
                     const container = await docker.createContainer({
                         name: serverInfos.name,
@@ -179,7 +179,7 @@ module.exports = class Server {
                         Image: serverInfos.dockerImage,
                         HostConfig: {
                             PortBindings: { "80/tcp": [{ HostIp: "127.0.0.1", HostPort: serverInfos.port.toString() }] },
-                            Binds: [path.join(homedir(), "servers", serverInfos.name) + ":/home/server"],
+                            Binds: [path.join(os.homedir(), "servers", serverInfos.name) + ":/home/server"],
                             LogConfig: { Type: "json-file", Config: { "max-size": "5m", "max-file": "2" } }
                         },
                         Env: Object.entries(serverInfos.environmentVariables || {}).map((environmentVariable) => environmentVariable[0] + "=" + environmentVariable[1])
