@@ -97,7 +97,7 @@ module.exports = class NextJsServer extends DockerServer {
         } catch (error) {
         }
 
-        await fs.rename(serverDir, serverDir + "-old");
+        if (existsSync(serverDir)) await fs.rename(serverDir, serverDir + "-old");
         await fs.rename(tempDir, serverDir);
 
         this.lastLogs = [];

@@ -57,7 +57,7 @@ module.exports = class WebsiteServer extends Server {
         }
 
         await rmrf(serverDir + "-old");
-        await fs.rename(serverDir, serverDir + "-old");
+        if (existsSync(serverDir)) await fs.rename(serverDir, serverDir + "-old");
         await fs.rename(tempDir, serverDir);
         await rmrf(serverDir + "-old");
 
