@@ -70,7 +70,8 @@
                     ".env",
                     ".htaccess",
                     ".htpasswd"
-                ]
+                ],
+                "installDev": false
             }
         }
     ]
