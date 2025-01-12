@@ -59,7 +59,10 @@ module.exports = class ReactJsServer extends Server {
                     && await fs.readFile(path.join(tempDir, "package.json"), "utf8") === await fs.readFile(path.join(serverDir, "package.json"), "utf8"))
                     await runCommand(`cp -r ${path.join(serverDir, "node_modules")} ${tempDir}`);
                 else
-                    await runCommand(`docker run --rm -i --name ${this.name}-Deploy -v ${tempDir}:/home/server ${this.buildDockerImage} npm install --omit=dev`);
+                    if (this.deployment.installDev)
+                        await runCommand(`docker run --rm -i --name ${this.name}-Deploy -v ${tempDir}:/home/server ${this.buildDockerImage} npm install`);
+                    else
+                        await runCommand(`docker run --rm -i --name ${this.name}-Deploy -v ${tempDir}:/home/server ${this.buildDockerImage} npm install --omit=dev`);
             } catch (error) {
                 await onError(error);
                 return;
