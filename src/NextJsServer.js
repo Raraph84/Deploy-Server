@@ -68,7 +68,7 @@ module.exports = class NextJsServer extends DockerServer {
                     && await fs.readFile(path.join(tempDir, "package.json"), "utf8") === await fs.readFile(path.join(serverDir, "package.json"), "utf8"))
                     await runCommand(`cp -r ${path.join(serverDir, "node_modules")} ${tempDir}`, (line) => this.log(line));
                 else
-                    await runCommand(`docker run --rm -i --name ${this.name}-Deploy -v ${tempDir}:/home/server ${this.dockerImage} npm install --omit=dev`, (line) => this.log(line));
+                    await runCommand(`docker run --rm -i --name ${this.name}-Deploy -v ${tempDir}:/home/server ${this.dockerImage} npm install${!this.deployment.installDev ? " --omit=dev" : ""}`, (line) => this.log(line));
             } catch (error) {
                 await onError(error);
                 return;
