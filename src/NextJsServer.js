@@ -1,4 +1,4 @@
-const { existsSync, promises: fs } = require("fs");
+const { existsSync, promises: fs, rmdir } = require("fs");
 const { runCommand } = require("./utils");
 const DockerServer = require("./DockerServer");
 const os = require("os");
@@ -32,8 +32,8 @@ module.exports = class NextJsServer extends DockerServer {
         this.setState("deploying");
         this.log("[AutoDeploy] Deploying...");
 
-        const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "deploy-"));
         const serverDir = path.join(os.homedir(), "servers", this.name);
+        const tempDir = serverDir + "-temp";
 
         const rmrf = async (dir) => { if (existsSync(dir)) await fs.rm(dir, { recursive: true }); };
 
@@ -45,6 +45,10 @@ module.exports = class NextJsServer extends DockerServer {
             this.log("[AutoDeploy] Error while deploying !");
             this.setState(oldState);
         };
+
+        await rmrf(tempDir);
+        if (existsSync(serverDir + "-old"))
+            throw new Error("Old directory already exists !");
 
         try {
             await runCommand(`git clone https://${this.deployment.githubAuth || "none"}@github.com/${this.deployment.githubRepo} -b ${this.deployment.githubBranch} ${tempDir}`, (line) => this.log(line));
@@ -89,8 +93,6 @@ module.exports = class NextJsServer extends DockerServer {
             await onError(error);
             return;
         }
-
-        await rmrf(serverDir + "-old");
 
         try {
             await this.container.stop({ t: 3 });

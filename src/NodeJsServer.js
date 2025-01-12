@@ -32,8 +32,8 @@ module.exports = class NodeJsServer extends DockerServer {
         this.setState("deploying");
         this.log("[AutoDeploy] Deploying...");
 
-        const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "deploy-"));
         const serverDir = path.join(os.homedir(), "servers", this.name);
+        const tempDir = serverDir + "-temp";
 
         const rmrf = async (dir) => { if (existsSync(dir)) await fs.rm(dir, { recursive: true }); };
 
@@ -45,6 +45,10 @@ module.exports = class NodeJsServer extends DockerServer {
             this.log("[AutoDeploy] Error while deploying !");
             this.setState(oldState);
         };
+
+        await rmrf(tempDir);
+        if (existsSync(serverDir + "-old"))
+            throw new Error("Old directory already exists !");
 
         try {
             await runCommand(`git clone https://${this.deployment.githubAuth || "none"}@github.com/${this.deployment.githubRepo} -b ${this.deployment.githubBranch} ${tempDir}`, (line) => this.log(line));
@@ -82,8 +86,6 @@ module.exports = class NodeJsServer extends DockerServer {
                 }
             }
         }
-
-        await rmrf(serverDir + "-old");
 
         try {
             await this.container.stop({ t: 3 });

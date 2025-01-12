@@ -27,8 +27,8 @@ module.exports = class ReactJsServer extends Server {
 
         console.log("Deploying " + this.name + "...");
 
-        const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "deploy-"));
         const serverDir = path.join(os.homedir(), "servers", this.name);
+        const tempDir = serverDir + "-temp";
 
         const rmrf = async (dir) => { if (existsSync(dir)) await fs.rm(dir, { recursive: true }); };
 
@@ -36,6 +36,10 @@ module.exports = class ReactJsServer extends Server {
             this.deploying = false;
             console.log("Error deploying " + this.name + " :", error);
         };
+
+        await rmrf(tempDir);
+        if (existsSync(serverDir + "-old"))
+            throw new Error("Old directory already exists !");
 
         try {
             await runCommand(`git clone https://${this.deployment.githubAuth || "none"}@github.com/${this.deployment.githubRepo} -b ${this.deployment.githubBranch} ${tempDir}`);
@@ -86,7 +90,6 @@ module.exports = class ReactJsServer extends Server {
         await rmrf(path.join(tempDir, "www"));
         await fs.rename(path.join(tempDir, "build"), path.join(tempDir, "www"));
 
-        await rmrf(serverDir + "-old");
         if (existsSync(serverDir)) await fs.rename(serverDir, serverDir + "-old");
         await fs.rename(tempDir, serverDir);
         await rmrf(serverDir + "-old");
