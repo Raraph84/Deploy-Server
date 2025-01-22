@@ -39,6 +39,19 @@ module.exports = class Server {
 
         for (const serverInfos of config.servers.sort((a, b) => a.name.localeCompare(b.name))) {
 
+            // Retrocompatibility
+            if (serverInfos.type === "nextjs") {
+                serverInfos.type = "nodejs";
+                if (!serverInfos.startCommand)
+                    serverInfos.startCommand = "npm run start";
+                if (serverInfos.deployment && !serverInfos.deployment.buildCommand)
+                    serverInfos.deployment.buildCommand = "npm run build";
+                if (!serverInfos.ports)
+                    serverInfos.ports = { [serverInfos.port]: [serverInfos.destPort ?? 80] };
+                delete serverInfos.port;
+                delete serverInfos.destPort;
+            }
+
             if (serverInfos.type === "nodejs") {
 
                 const container = containers.find((container) => container.Names[0] === "/" + serverInfos.name);
@@ -59,30 +72,26 @@ module.exports = class Server {
                     if (!existsSync(path.join(os.homedir(), "servers", serverInfos.name)))
                         await fs.mkdir(path.join(os.homedir(), "servers", serverInfos.name));
 
+                    const exposedPorts = {};
+                    const portBindings = {};
+                    for (const [hostPort, port] of Object.entries(serverInfos.ports ?? {})) {
+                        exposedPorts[hostPort + "/tcp"] = {};
+                        portBindings[hostPort + "/tcp"] = [{ HostIp: "127.0.0.1", HostPort: port.toString() }];
+                    }
+
                     const container = await docker.createContainer({
+                        name: serverInfos.name,
+                        ...(serverInfos.ports ? { ExposedPorts: exposedPorts } : {}),
                         Tty: true,
                         OpenStdin: true,
-                        name: serverInfos.name,
                         HostConfig: {
-                            Mounts: [
-                                {
-                                    Target: "/home/server",
-                                    Source: path.join(os.homedir(), "servers", serverInfos.name),
-                                    Type: "bind"
-                                }
-                            ],
-                            NetworkMode: "host",
-                            LogConfig: {
-                                Type: "json-file",
-                                Config: {
-                                    "max-size": "5m",
-                                    "max-file": "2"
-                                }
-                            }
+                            Binds: [path.join(os.homedir(), "servers", serverInfos.name) + ":/home/server"],
+                            ...(serverInfos.ports ? { PortBindings: portBindings } : { NetworkMode: "host" }),
+                            LogConfig: { Type: "json-file", Config: { "max-size": "5m", "max-file": "2" } }
                         },
-                        Env: Object.entries(serverInfos.environmentVariables || {}).map((environmentVariable) => environmentVariable[0] + "=" + environmentVariable[1]),
+                        Env: Object.entries(serverInfos.environmentVariables ?? {}).map((environmentVariable) => environmentVariable[0] + "=" + environmentVariable[1]),
                         Image: serverInfos.dockerImage,
-                        Cmd: ["node", serverInfos.mainFile || "index.js"]
+                        Cmd: serverInfos.startCommand?.split(" ") ?? ["node", serverInfos.mainFile ?? "index.js"]
                     });
 
                     const server = new NodeJsServer(serverInfos.name, container, gateway, serverInfos.dockerImage, serverInfos.deployment ?? null);
@@ -150,48 +159,8 @@ module.exports = class Server {
                 if (!existsSync(path.join(os.homedir(), "servers", serverInfos.name)))
                     server.deploy();
 
-            } else if (serverInfos.type === "nextjs") {
-
-                if (serverInfos.deployment && !serverInfos.deployment.buildCommand) serverInfos.deployment.buildCommand = "npm run build";
-
-                const container = containers.find((container) => container.Names[0] === "/" + serverInfos.name);
-
-                if (container) {
-
-                    const server = new NodeJsServer(serverInfos.name, docker.getContainer(container.Id), gateway, serverInfos.dockerImage, serverInfos.deployment ?? null);
-
-                    if (container.State === "running") {
-                        server.listenLogs();
-                        server.setState("started");
-                    } else {
-                        server.deploy();
-                    }
-
-                } else {
-
-                    if (!existsSync(path.join(os.homedir(), "servers", serverInfos.name)))
-                        await fs.mkdir(path.join(os.homedir(), "servers", serverInfos.name));
-
-                    const destPort = (serverInfos.destPort ?? 80) + "/tcp";
-                    const container = await docker.createContainer({
-                        name: serverInfos.name,
-                        ExposedPorts: { [destPort]: {} },
-                        Tty: true,
-                        OpenStdin: true,
-                        Cmd: ["npm", "start"],
-                        Image: serverInfos.dockerImage,
-                        HostConfig: {
-                            PortBindings: { [destPort]: [{ HostIp: "127.0.0.1", HostPort: serverInfos.port.toString() }] },
-                            Binds: [path.join(os.homedir(), "servers", serverInfos.name) + ":/home/server"],
-                            LogConfig: { Type: "json-file", Config: { "max-size": "5m", "max-file": "2" } }
-                        },
-                        Env: Object.entries(serverInfos.environmentVariables || {}).map((environmentVariable) => environmentVariable[0] + "=" + environmentVariable[1])
-                    });
-
-                    const server = new NodeJsServer(serverInfos.name, container, gateway, serverInfos.dockerImage, serverInfos.deployment ?? null);
-                    server.deploy();
-                }
-            }
+            } else
+                throw new Error("Unknown server type: " + serverInfos.type);
         }
     }
 }
