@@ -10,6 +10,14 @@ mkdir ~/servers
 cp ~/deploy-server/config.example.json ~/deploy-server/config.json
 nano ~/deploy-server/config.json
 ```
+- Install npm packages
+```bash
+docker run -it --rm \
+--volume ~/deploy-server:/home/$(whoami)/deploy-server \
+--workdir /home/$(whoami)/deploy-server \
+--env TZ=Europe/Paris \
+node npm install --omit=dev
+```
 - Start the server into Docker
 ```bash
 docker pull node && \
@@ -27,7 +35,7 @@ docker run -itd \
 --workdir /home/$(whoami)/deploy-server \
 --env TZ=Europe/Paris \
 --restart unless-stopped \
-node bash -c "userdel node; groupadd docker -g 998; useradd $(whoami) -G docker; su $(whoami) -c 'node index.js'"
+node bash -c "userdel node; groupadd docker -g $(getent group docker | cut -d: -f3); useradd $(whoami) -G docker; su $(whoami) -c 'node index.js'"
 ```
 - Your server is ready !
 

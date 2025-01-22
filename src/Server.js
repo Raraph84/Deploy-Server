@@ -170,15 +170,17 @@ module.exports = class Server {
                     if (!existsSync(path.join(os.homedir(), "servers", serverInfos.name)))
                         await fs.mkdir(path.join(os.homedir(), "servers", serverInfos.name));
 
+                    const destPort = (serverInfos.destPort ?? 80) + "/tcp";
+
                     const container = await docker.createContainer({
                         name: serverInfos.name,
-                        ExposedPorts: { "80/tcp": {} },
+                        ExposedPorts: { [destPort]: {} },
                         Tty: true,
                         OpenStdin: true,
                         Cmd: ["npm", "start"],
                         Image: serverInfos.dockerImage,
                         HostConfig: {
-                            PortBindings: { "80/tcp": [{ HostIp: "127.0.0.1", HostPort: serverInfos.port.toString() }] },
+                            PortBindings: { [destPort]: [{ HostIp: "127.0.0.1", HostPort: serverInfos.port.toString() }] },
                             Binds: [path.join(os.homedir(), "servers", serverInfos.name) + ":/home/server"],
                             LogConfig: { Type: "json-file", Config: { "max-size": "5m", "max-file": "2" } }
                         },
