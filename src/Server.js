@@ -33,7 +33,6 @@ module.exports = class Server {
         const PythonServer = require("./PythonServer");
         const WebsiteServer = require("./WebsiteServer");
         const ReactJsServer = require("./ReactJsServer");
-        const NextJsServer = require("./NextJsServer");
 
         const docker = new Docker();
         const containers = await docker.listContainers({ all: true });
@@ -150,13 +149,16 @@ module.exports = class Server {
                 const server = new ReactJsServer(serverInfos.name, serverInfos.buildDockerImage, serverInfos.deployment ?? null);
                 if (!existsSync(path.join(os.homedir(), "servers", serverInfos.name)))
                     server.deploy();
+
             } else if (serverInfos.type === "nextjs") {
+
+                if (serverInfos.deployment && !serverInfos.deployment.buildCommand) serverInfos.deployment.buildCommand = "npm run build";
 
                 const container = containers.find((container) => container.Names[0] === "/" + serverInfos.name);
 
                 if (container) {
 
-                    const server = new NextJsServer(serverInfos.name, docker.getContainer(container.Id), gateway, serverInfos.dockerImage, serverInfos.deployment ?? null);
+                    const server = new NodeJsServer(serverInfos.name, docker.getContainer(container.Id), gateway, serverInfos.dockerImage, serverInfos.deployment ?? null);
 
                     if (container.State === "running") {
                         server.listenLogs();
@@ -171,7 +173,6 @@ module.exports = class Server {
                         await fs.mkdir(path.join(os.homedir(), "servers", serverInfos.name));
 
                     const destPort = (serverInfos.destPort ?? 80) + "/tcp";
-
                     const container = await docker.createContainer({
                         name: serverInfos.name,
                         ExposedPorts: { [destPort]: {} },
@@ -187,7 +188,7 @@ module.exports = class Server {
                         Env: Object.entries(serverInfos.environmentVariables || {}).map((environmentVariable) => environmentVariable[0] + "=" + environmentVariable[1])
                     });
 
-                    const server = new NextJsServer(serverInfos.name, container, gateway, serverInfos.dockerImage, serverInfos.deployment ?? null);
+                    const server = new NodeJsServer(serverInfos.name, container, gateway, serverInfos.dockerImage, serverInfos.deployment ?? null);
                     server.deploy();
                 }
             }

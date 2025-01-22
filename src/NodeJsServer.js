@@ -87,6 +87,15 @@ module.exports = class NodeJsServer extends DockerServer {
             }
         }
 
+        if (this.deployment.buildCommand) {
+            try {
+                await runCommand(`docker run --rm -i --name ${this.name}-Deploy -v ${tempDir}:/home/server ${this.dockerImage} ${this.deployment.buildCommand}`, (line) => this.log(line));
+            } catch (error) {
+                await onError(error);
+                return;
+            }
+        }
+
         try {
             await this.container.stop({ t: 3 });
         } catch (error) {
