@@ -3,66 +3,14 @@
     "apiPort": 8001,
     "gatewayPort": 8002,
     "ftpPort": 2121,
-    "ftpCredentials": {
-        "myUser": {
-            "password": "myPassword",
-            "root": "/home/me/servers/myWebsite"
-        }
-    },
+    "ftpCredentials": {},
     "ftpPassiveMinPort": 21000,
     "ftpPassiveMaxPort": 21010,
     "servers": [
         {
-            "name": "My-NodeJS-Bot",
-            "type": "nodejs",
-            "dockerImage": "mynode:20",
-            "mainFile": "index.js",
-            "deployment": {
-                "githubRepo": "MyGitHubUser/MyNodeJsRepo",
-                "githubBranch": "main",
-                "githubAuth": "ghp_MY_GITHUB_ACCESS_TOKEN",
-                "ignoredFiles": [
-                    "myFileOrFolderThatWillNotBeErasedOnDeploy.txt"
-                ]
-            }
-        },
-        {
-            "name": "My-Python-Bot",
-            "type": "python",
-            "dockerImage": "rpython:3.11",
-            "mainFile": "main.js",
-            "deployment": {
-                "githubRepo": "MyGitHubUser/MyPythonRepo",
-                "githubBranch": "master",
-                "githubAuth": "ghp_MY_GITHUB_ACCESS_TOKEN",
-                "ignoredFiles": [
-                    "myFileOrFolderThatWillNotBeErasedOnDeploy.txt"
-                ]
-            }
-        },
-        {
-            "name": "My-Website",
-            "type": "website",
-            "deployment": {
-                "githubRepo": "MyGitHubUser/MyWebsiteRepo",
-                "githubBranch": "newfeature",
-                "githubAuth": "ghp_MY_GITHUB_ACCESS_TOKEN"
-            }
-        },
-        {
-            "name": "My-NextJs-Website",
-            "type": "nextjs",
-            "port": 8080,
-            "deployment": {
-                "githubRepo": "MyGitHubUser/MyNextJsWebsiteRepo",
-                "githubBranch": "dev",
-                "githubAuth": "ghp_MY_GITHUB_ACCESS_TOKEN"
-            }
-        },
-        {
             "name": "Deploy-Server-Website",
             "type": "reactjs",
-            "buildDockerImage": "mynode:20",
+            "buildDockerImage": "cnode:22",
             "deployment": {
                 "githubRepo": "Raraph84/Deploy-Server-Frontend",
                 "githubBranch": "main",
@@ -70,8 +18,7 @@
                     ".env",
                     ".htaccess",
                     ".htpasswd"
-                ],
-                "installDev": false
+                ]
             }
         }
     ]

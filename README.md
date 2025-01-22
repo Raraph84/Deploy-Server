@@ -18,6 +18,10 @@ docker run -it --rm \
 --env TZ=Europe/Paris \
 node npm install --omit=dev
 ```
+- Build the Docker NodeJS image for servers
+```bash
+docker build -t cnode:22 -f Dockerfile-cnode-22 .
+```
 - Start the server into Docker
 ```bash
 docker pull node && \
@@ -42,3 +46,5 @@ node bash -c "userdel node; groupadd docker -g $(getent group docker | cut -d: -
 ## Roadmap
 - Docker image
 - Run npm install and npm run build with native Docker implementation instead of running docker command
+- Use dotenv
+- Remove ReactJS server type and add build system to website type
