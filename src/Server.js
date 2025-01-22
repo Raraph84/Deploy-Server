@@ -118,29 +118,26 @@ module.exports = class Server {
                     if (!existsSync(path.join(os.homedir(), "servers", serverInfos.name)))
                         await fs.mkdir(path.join(os.homedir(), "servers", serverInfos.name));
 
+                    const exposedPorts = {};
+                    const portBindings = {};
+                    for (const [hostPort, port] of Object.entries(serverInfos.ports ?? {})) {
+                        exposedPorts[hostPort + "/tcp"] = {};
+                        portBindings[hostPort + "/tcp"] = [{ HostIp: "127.0.0.1", HostPort: port.toString() }];
+                    }
+
                     const container = await docker.createContainer({
+                        name: serverInfos.name,
+                        ...(serverInfos.ports ? { ExposedPorts: exposedPorts } : {}),
                         Tty: true,
                         OpenStdin: true,
-                        name: serverInfos.name,
                         HostConfig: {
-                            Mounts: [
-                                {
-                                    Target: "/home/server",
-                                    Source: path.join(os.homedir(), "servers", serverInfos.name),
-                                    Type: "bind"
-                                }
-                            ],
-                            LogConfig: {
-                                Type: "json-file",
-                                Config: {
-                                    "max-size": "5m",
-                                    "max-file": "2"
-                                }
-                            }
+                            Binds: [path.join(os.homedir(), "servers", serverInfos.name) + ":/home/server"],
+                            ...(serverInfos.ports ? { PortBindings: portBindings } : { NetworkMode: "host" }),
+                            LogConfig: { Type: "json-file", Config: { "max-size": "5m", "max-file": "2" } }
                         },
-                        Env: Object.entries(serverInfos.environmentVariables || {}).map((environmentVariable) => environmentVariable[0] + "=" + environmentVariable[1]),
+                        Env: Object.entries(serverInfos.environmentVariables ?? {}).map((environmentVariable) => environmentVariable[0] + "=" + environmentVariable[1]),
                         Image: serverInfos.dockerImage,
-                        Cmd: "if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi && python " + (serverInfos.mainFile || "main.py")
+                        Cmd: "if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi && python " + (serverInfos.mainFile ?? "main.py")
                     });
 
                     const server = new PythonServer(serverInfos.name, container, gateway, serverInfos.dockerImage, serverInfos.deployment ?? null);
