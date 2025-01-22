@@ -1,0 +1,89 @@
+{
+    "token": "A_RANDOM_TOKEN_FOR_THE_PANEL",
+    "apiPort": 8001,
+    "gatewayPort": 8002,
+    "ftpPort": 2121,
+    "ftpCredentials": {
+        "myUser": {
+            "password": "myPassword",
+            "root": "/home/me/servers/myWebsite"
+        }
+    },
+    "ftpPassiveMinPort": 21000,
+    "ftpPassiveMaxPort": 21010,
+    "servers": [
+        {
+            "name": "My-NodeJS-Server",
+            "type": "nodejs",
+            "dockerImage": "cnode:22",
+            "startCommand": "node index.js", // Optional
+            "mainFile": "index.js", // Optional
+            "ports": {}, // Optional, if not provided, the server will be network host
+            "environmentVariables": {}, // Optional
+            "deployment": { // Optional
+                "buildCommand": "npm run build", // Optional, if not provided, the server will be deployed without building
+                "installDev": false, // Optional
+                "githubRepo": "MyGitHubUser/cNodeJsRepo",
+                "githubBranch": "main",
+                "githubAuth": "ghp_MY_GITHUB_ACCESS_TOKEN", // Optional
+                "ignoredFiles": [] // Optional
+            }
+        },
+        {
+            "name": "My-Python-Server",
+            "type": "python",
+            "dockerImage": "cpython:3.11",
+            "mainFile": "main.py",
+            "ports": {}, // Optional, if not provided, the server will be network host
+            "environmentVariables": {}, // Optional
+            "deployment": { // Optional
+                "githubRepo": "MyGitHubUser/MyPythonRepo",
+                "githubBranch": "master",
+                "githubAuth": "ghp_MY_GITHUB_ACCESS_TOKEN", // Optional
+                "ignoredFiles": [] // Optional
+            }
+        },
+        {
+            "name": "My-Website",
+            "type": "website",
+            "deployment": {
+                "githubRepo": "MyGitHubUser/MyWebsiteRepo",
+                "githubBranch": "newfeature",
+                "githubAuth": "ghp_MY_GITHUB_ACCESS_TOKEN", // Optional
+                "ignoredFiles": [] // Optional
+            }
+        },
+        {
+            "name": "My-ReactJs-Website",
+            "type": "reactjs",
+            "buildDockerImage": "cnode:22",
+            "deployment": { // Optional
+                "githubRepo": "Raraph84/Deploy-Server-Frontend",
+                "githubBranch": "main",
+                "githubAuth": "ghp_MY_GITHUB_ACCESS_TOKEN", // Optional
+                "ignoredFiles": [], // Optional
+                "installDev": false // Optional
+            }
+        },
+        {
+            "name": "My-NextJs-Website",
+            "type": "nextjs", // DEPRECATED Use "nodejs" instead
+            "dockerImage": "cnode:22",
+            "startCommand": "npm run start", // Optional
+            "port": 8080, // DEPRECATED Use "ports" instead
+            "destPort": 80, // Optional - DEPRECATED Use "ports" instead
+            "ports": { // Optional
+                "8080": 80
+            },
+            "environmentVariables": {}, // Optional
+            "deployment": { // Optional
+                "buildCommand": "npm run build", // Optional
+                "installDev": false, // Optional
+                "githubRepo": "MyGitHubUser/MyNextJsWebsiteRepo",
+                "githubBranch": "dev",
+                "githubAuth": "ghp_MY_GITHUB_ACCESS_TOKEN", // Optional
+                "ignoredFiles": [] // Optional
+            }
+        }
+    ]
+}
