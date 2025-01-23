@@ -152,7 +152,10 @@ module.exports = class Server {
 
             } else if (serverInfos.type === "reactjs") {
 
-                const server = new ReactJsServer(serverInfos.name, serverInfos.buildDockerImage, serverInfos.deployment ?? null);
+                if (serverInfos.buildDockerImage && serverInfos.deployment && !serverInfos.deployment.dockerImage)
+                    serverInfos.deployment.dockerImage = serverInfos.buildDockerImage;
+
+                const server = new ReactJsServer(serverInfos.name, serverInfos.deployment ?? null);
                 if (!existsSync(path.join(os.homedir(), "servers", serverInfos.name)))
                     server.deploy();
 

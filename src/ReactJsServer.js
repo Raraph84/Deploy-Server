@@ -8,15 +8,13 @@ module.exports = class ReactJsServer extends Server {
 
     /**
      * @param {string} name 
-     * @param {string} buildDockerImage 
      * @param {object} deployment 
      */
-    constructor(name, buildDockerImage, deployment) {
+    constructor(name, deployment) {
 
         super(name);
 
         this.type = "reactjs";
-        this.buildDockerImage = buildDockerImage;
         this.deployment = deployment;
     }
 
@@ -59,7 +57,7 @@ module.exports = class ReactJsServer extends Server {
                     && await fs.readFile(path.join(tempDir, "package.json"), "utf8") === await fs.readFile(path.join(serverDir, "package.json"), "utf8"))
                     await runCommand(`cp -r ${path.join(serverDir, "node_modules")} ${tempDir}`);
                 else
-                    await runCommand(`docker run --rm -i --name ${this.name}-Deploy -v ${tempDir}:/home/server ${this.buildDockerImage} npm install${!this.deployment.installDev ? " --omit=dev" : ""}`);
+                    await runCommand(`docker run --rm -i --name ${this.name}-Deploy -v ${tempDir}:/home/server ${this.deployment.dockerImage} npm install${!this.deployment.installDev ? " --omit=dev" : ""}`);
             } catch (error) {
                 await onError(error);
                 return;
@@ -81,7 +79,7 @@ module.exports = class ReactJsServer extends Server {
         await rmrf(path.join(tempDir, "build"));
 
         try {
-            await runCommand(`docker run --rm -i --name ${this.name}-Deploy -v ${tempDir}:/home/server ${this.buildDockerImage} npm run build`);
+            await runCommand(`docker run --rm -i --name ${this.name}-Deploy -v ${tempDir}:/home/server ${this.deployment.dockerImage} npm run build`);
         } catch (error) {
             await onError(error);
             return;
