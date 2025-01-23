@@ -75,8 +75,8 @@ module.exports = class Server {
                     const exposedPorts = {};
                     const portBindings = {};
                     for (const [hostPort, port] of Object.entries(serverInfos.ports ?? {})) {
-                        exposedPorts[hostPort + "/tcp"] = {};
-                        portBindings[hostPort + "/tcp"] = [{ HostIp: "127.0.0.1", HostPort: port.toString() }];
+                        exposedPorts[port + "/tcp"] = {};
+                        portBindings[port + "/tcp"] = [{ HostIp: "127.0.0.1", HostPort: hostPort.toString() }];
                     }
 
                     const container = await docker.createContainer({
@@ -121,8 +121,8 @@ module.exports = class Server {
                     const exposedPorts = {};
                     const portBindings = {};
                     for (const [hostPort, port] of Object.entries(serverInfos.ports ?? {})) {
-                        exposedPorts[hostPort + "/tcp"] = {};
-                        portBindings[hostPort + "/tcp"] = [{ HostIp: "127.0.0.1", HostPort: port.toString() }];
+                        exposedPorts[port + "/tcp"] = {};
+                        portBindings[port + "/tcp"] = [{ HostIp: "127.0.0.1", HostPort: hostPort.toString() }];
                     }
 
                     const container = await docker.createContainer({
