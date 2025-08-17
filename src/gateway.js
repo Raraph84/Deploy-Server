@@ -13,7 +13,7 @@ module.exports.start = async () => {
 
     gateway.on("connection", (/** @type {import("raraph84-lib/src/WebSocketClient")} */ client) => {
         setTimeout(() => {
-            if (!client.infos.logged)
+            if (!client.metadata.logged)
                 client.close("Please login");
         }, 10 * 1000);
     });
@@ -27,7 +27,7 @@ module.exports.start = async () => {
 
         if (command === "LOGIN") {
 
-            if (client.infos.logged) {
+            if (client.metadata.logged) {
                 client.close("You are already logged in");
                 return;
             }
@@ -47,7 +47,7 @@ module.exports.start = async () => {
                 return;
             }
 
-            client.infos.logged = true;
+            client.metadata.logged = true;
             client.emitEvent("LOGGED");
 
             Server.servers.filter((server) => server instanceof DockerServer).forEach((server) => {
@@ -57,19 +57,19 @@ module.exports.start = async () => {
             return;
         }
 
-        if (!client.infos.logged) {
+        if (!client.metadata.logged) {
             client.close("You are not logged in");
             return;
         }
 
         if (command === "HEARTBEAT") {
 
-            if (!client.infos.waitingHeartbeat) {
+            if (!client.metadata.waitingHeartbeat) {
                 client.close("Useless heartbeat");
                 return;
             }
 
-            client.infos.waitingHeartbeat = false;
+            client.metadata.waitingHeartbeat = false;
             return;
         }
 
@@ -114,13 +114,13 @@ module.exports.start = async () => {
 
     heartbeatInterval = setInterval(() => {
 
-        gateway.clients.filter((client) => client.infos.logged).forEach((client) => {
-            client.infos.waitingHeartbeat = true;
+        gateway.clients.filter((client) => client.metadata.logged).forEach((client) => {
+            client.metadata.waitingHeartbeat = true;
             client.emitEvent("HEARTBEAT");
         });
 
         setTimeout(() => {
-            gateway.clients.filter((client) => client.infos.waitingHeartbeat).forEach((client) => {
+            gateway.clients.filter((client) => client.metadata.waitingHeartbeat).forEach((client) => {
                 client.close("Please respond to heartbeat");
             });
         }, 10 * 1000);

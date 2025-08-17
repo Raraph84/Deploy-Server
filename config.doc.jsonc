@@ -3,14 +3,14 @@
     "apiPort": 8001,
     "gatewayPort": 8002,
     "ftpPort": 2121,
+    "ftpPassiveMinPort": 21000,
+    "ftpPassiveMaxPort": 21010,
     "ftpCredentials": {
         "myUser": {
             "password": "myPassword",
             "root": "/home/me/servers/myWebsite"
         }
     },
-    "ftpPassiveMinPort": 21000,
-    "ftpPassiveMaxPort": 21010,
     "servers": [
         {
             "name": "My-NodeJS-Server",
@@ -23,7 +23,7 @@
             "deployment": { // Optional
                 "buildCommand": "npm run build", // Optional, if not provided, the server will be deployed without building
                 "installDev": false, // Optional
-                "githubRepo": "MyGitHubUser/cNodeJsRepo",
+                "githubRepo": "MyGitHubUser/MyNodeJsRepo",
                 "githubBranch": "main",
                 "githubAuth": "ghp_MY_GITHUB_ACCESS_TOKEN", // Optional
                 "ignoredFiles": [] // Optional

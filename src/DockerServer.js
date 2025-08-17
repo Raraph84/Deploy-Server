@@ -26,14 +26,14 @@ module.exports = class DockerServer extends Server {
 
         this.#gateway = gateway;
 
-        this.#gateway.clients.filter((client) => client.infos.logged).forEach((client) => client.emitEvent("SERVER", { id: this.id, name: this.name, type: this.type, state: this.state }));
+        this.#gateway.clients.filter((client) => client.metadata.logged).forEach((client) => client.emitEvent("SERVER", { id: this.id, name: this.name, type: this.type, state: this.state }));
     }
 
     log(line, date = Date.now()) {
         const log = { line, date };
         this.lastLogs.push(log);
         if (this.lastLogs.length > 500) this.lastLogs.shift();
-        this.#gateway.clients.filter((client) => client.infos.logged).forEach((client) => client.emitEvent("LOG", { serverId: this.id, logs: [log] }));
+        this.#gateway.clients.filter((client) => client.metadata.logged).forEach((client) => client.emitEvent("LOG", { serverId: this.id, logs: [log] }));
     }
 
     listenLogs() {
@@ -51,7 +51,7 @@ module.exports = class DockerServer extends Server {
 
     setState(state) {
         this.state = state;
-        this.#gateway.clients.filter((client) => client.infos.logged).forEach((client) => client.emitEvent("SERVER_STATE", { serverId: this.id, state: this.state }));
+        this.#gateway.clients.filter((client) => client.metadata.logged).forEach((client) => client.emitEvent("SERVER_STATE", { serverId: this.id, state: this.state }));
     }
 
     async start() {
