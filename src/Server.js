@@ -105,7 +105,9 @@ module.exports = class Server {
                         WorkingDir: "/home/server",
                         Env: Object.entries(serverInfos.environmentVariables ?? {}).map((environmentVariable) => environmentVariable[0] + "=" + environmentVariable[1]),
                         Image: serverInfos.dockerImage,
-                        Cmd: (serverInfos.type === "python" ? "if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi && " : "") + startCommand
+                        Cmd: serverInfos.type === "nodejs"
+                            ? startCommand.split(" ")
+                            : ["bash", "-c", "if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi && " + startCommand]
                     });
 
                     const server = serverInfos.type === "nodejs"

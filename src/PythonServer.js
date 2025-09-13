@@ -15,7 +15,7 @@ module.exports = class PythonServer extends DockerServer {
      */
     constructor(name, container, gateway, dockerImage, deployment) {
 
-        super(name, container, dockerImage, gateway);
+        super(name, container, gateway, dockerImage);
 
         this.type = "python";
         this.deployment = deployment;
