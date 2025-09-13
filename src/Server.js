@@ -96,13 +96,17 @@ module.exports = class Server {
                         ? ("node " + (serverInfos.mainFile ?? "index.js"))
                         : ("python " + (serverInfos.mainFile ?? "main.py")));
 
+                    const volumes = [];
+                    for (const [hostPath, containerPath] of Object.entries(serverInfos.volumes ?? {}))
+                        volumes.push(path.resolve(hostPath) + ":" + containerPath);
+
                     const container = await docker.createContainer({
                         name: serverInfos.name,
                         ...(serverInfos.ports ? { ExposedPorts: exposedPorts } : {}),
                         Tty: true,
                         OpenStdin: true,
                         HostConfig: {
-                            Binds: [path.join(os.homedir(), "servers", serverInfos.name) + ":/home/server"],
+                            Binds: [path.join(os.homedir(), "servers", serverInfos.name) + ":/home/server", ...volumes],
                             ...(serverInfos.ports ? { PortBindings: portBindings } : { NetworkMode: "host" }),
                             LogConfig: { Type: "json-file", Config: { "max-size": "5m", "max-file": "2" } }
                         },

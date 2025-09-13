@@ -19,6 +19,7 @@
             "startCommand": "node index.js", // Optional
             "mainFile": "index.js", // Optional
             "ports": {}, // Optional, if not provided, the server will be network host
+            "volumes": {}, // Optional
             "environmentVariables": {}, // Optional
             "deployment": { // Optional
                 "buildCommand": "npm run build", // Optional, if not provided, the server will be deployed without building
@@ -36,6 +37,7 @@
             "startCommand": "python main.py", // Optional
             "mainFile": "main.py", // Optional
             "ports": {}, // Optional, if not provided, the server will be network host
+            "volumes": {}, // Optional
             "environmentVariables": {}, // Optional
             "deployment": { // Optional
                 "githubRepo": "MyGitHubUser/MyPythonRepo",
@@ -45,7 +47,7 @@
             }
         },
         {
-            "name": "My-Website",
+            "name": "My-Static-Website",
             "type": "website",
             "deployment": {
                 "githubRepo": "MyGitHubUser/MyWebsiteRepo",
