@@ -41,6 +41,7 @@ module.exports = class Server {
 
             // Retrocompatibility
             if (serverInfos.type === "nextjs") {
+                console.warn("The 'nextjs' server type has been deprecated, it will be removed in future versions. Please use 'nodejs' instead.");
                 serverInfos.type = "nodejs";
                 if (!serverInfos.startCommand)
                     serverInfos.startCommand = "npm run start";
@@ -89,9 +90,10 @@ module.exports = class Server {
                             ...(serverInfos.ports ? { PortBindings: portBindings } : { NetworkMode: "host" }),
                             LogConfig: { Type: "json-file", Config: { "max-size": "5m", "max-file": "2" } }
                         },
+                        WorkingDir: "/home/server",
                         Env: Object.entries(serverInfos.environmentVariables ?? {}).map((environmentVariable) => environmentVariable[0] + "=" + environmentVariable[1]),
                         Image: serverInfos.dockerImage,
-                        Cmd: serverInfos.startCommand?.split(" ") ?? ["node", serverInfos.mainFile ?? "index.js"]
+                        Cmd: serverInfos.startCommand ?? ("node " + (serverInfos.mainFile ?? "index.js"))
                     });
 
                     const server = new NodeJsServer(serverInfos.name, container, gateway, serverInfos.dockerImage, serverInfos.deployment ?? null);
@@ -135,9 +137,10 @@ module.exports = class Server {
                             ...(serverInfos.ports ? { PortBindings: portBindings } : { NetworkMode: "host" }),
                             LogConfig: { Type: "json-file", Config: { "max-size": "5m", "max-file": "2" } }
                         },
+                        WorkingDir: "/home/server",
                         Env: Object.entries(serverInfos.environmentVariables ?? {}).map((environmentVariable) => environmentVariable[0] + "=" + environmentVariable[1]),
                         Image: serverInfos.dockerImage,
-                        Cmd: "if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi && python " + (serverInfos.mainFile ?? "main.py")
+                        Cmd: "if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi && " + (serverInfos.startCommand ?? ("python " + (serverInfos.mainFile ?? "main.py")))
                     });
 
                     const server = new PythonServer(serverInfos.name, container, gateway, serverInfos.dockerImage, serverInfos.deployment ?? null);

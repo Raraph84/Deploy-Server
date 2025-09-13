@@ -33,7 +33,8 @@
             "name": "My-Python-Server",
             "type": "python",
             "dockerImage": "cpython:3.11",
-            "mainFile": "main.py",
+            "startCommand": "python main.py", // Optional
+            "mainFile": "main.py", // Optional
             "ports": {}, // Optional, if not provided, the server will be network host
             "environmentVariables": {}, // Optional
             "deployment": { // Optional
