@@ -84,8 +84,12 @@ module.exports = class Server {
                     const exposedPorts = {};
                     const portBindings = {};
                     for (const [hostPort, port] of Object.entries(serverInfos.ports ?? {})) {
-                        exposedPorts[port + "/tcp"] = {};
-                        portBindings[port + "/tcp"] = [{ HostIp: "127.0.0.1", HostPort: hostPort.toString() }];
+                        const host = hostPort.split(":").reverse()[1] ?? "127.0.0.1";
+                        const srcPort = hostPort.split(":").pop();
+                        const dstPort = port.toString().split("/")[0];
+                        const proto = port.toString().split("/")[1] ?? "tcp";
+                        exposedPorts[dstPort + "/" + proto] = {};
+                        portBindings[dstPort + "/" + proto] = [{ HostIp: host, HostPort: srcPort }];
                     }
 
                     const startCommand = serverInfos.startCommand ?? (serverInfos.type === "nodejs"
