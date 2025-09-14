@@ -2,6 +2,7 @@ const { existsSync, promises: fs } = require("fs");
 const { getConfig } = require("raraph84-lib");
 const Docker = require("dockerode");
 const path = require("path");
+const { runCommand } = require("./utils");
 const config = getConfig(__dirname + "/..");
 
 module.exports = class Server {
@@ -26,6 +27,8 @@ module.exports = class Server {
      * @param {import("raraph84-lib/src/WebSocketServer")} gateway 
      */
     static async init(gateway) {
+
+        const groups = (await runCommand("id -G")).trim().split(" ");
 
         // Importing here to avoid circular dependencies
         const NodeJsServer = require("./NodeJsServer");
@@ -105,6 +108,7 @@ module.exports = class Server {
                         Tty: true,
                         OpenStdin: true,
                         HostConfig: {
+                            GroupAdd: groups,
                             Binds: [path.join(process.env.HOST_SERVERS_DIR_PATH, serverInfos.name) + ":/home/server", ...volumes],
                             ...(serverInfos.ports ? { PortBindings: portBindings } : { NetworkMode: "host" }),
                             LogConfig: { Type: "json-file", Config: { "max-size": "5m", "max-file": "2" } }
