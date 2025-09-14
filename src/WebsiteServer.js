@@ -1,7 +1,6 @@
 const { existsSync, promises: fs } = require("fs");
 const { runCommand } = require("./utils");
 const Server = require("./Server");
-const os = require("os");
 const path = require("path");
 
 module.exports = class WebsiteServer extends Server {
@@ -25,7 +24,7 @@ module.exports = class WebsiteServer extends Server {
 
         console.log("Deploying " + this.name + "...");
 
-        const serverDir = path.join(os.homedir(), "servers", this.name);
+        const serverDir = path.join("/servers", this.name);
         const tempDir = serverDir + "-temp";
 
         const rmrf = async (dir) => { if (existsSync(dir)) await fs.rm(dir, { recursive: true }); };

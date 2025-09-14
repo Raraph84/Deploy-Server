@@ -13,8 +13,8 @@ nano ~/deploy-server/config.json
 - Install npm packages
 ```bash
 docker run -it --rm \
---volume ~/deploy-server:/home/$(whoami)/deploy-server \
---workdir /home/$(whoami)/deploy-server \
+--volume ~/deploy-server:/deploy-server \
+--workdir /deploy-server \
 --env TZ=Europe/Paris \
 node npm install --omit=dev
 ```
@@ -28,18 +28,21 @@ docker pull node && \
 docker rm -f deploy-server; \
 docker run -itd \
 --name deploy-server \
---volume ~/deploy-server:/home/$(whoami)/deploy-server \
---volume ~/servers:/home/$(whoami)/servers \
+--volume ~/deploy-server:/deploy-server \
+--volume ~/servers:/servers \
+--env HOST_SERVERS_DIR_PATH=~/servers \
 --volume /var/run/docker.sock:/var/run/docker.sock \
 --volume /usr/bin/docker:/usr/bin/docker \
 --publish 127.0.0.1:8001:8001 \
 --publish 127.0.0.1:8002:8002 \
 --publish 2121:2121 \
 --publish 21000-21010:21000-21010 \
---workdir /home/$(whoami)/deploy-server \
+--workdir /deploy-server \
 --env TZ=Europe/Paris \
 --restart unless-stopped \
-node bash -c "userdel node; groupadd docker -g $(getent group docker | cut -d: -f3); useradd $(whoami) -G docker; su $(whoami) -c 'node index.js'"
+--user $(id -u):$(id -g) \
+--group-add $(getent group docker | cut -d: -f3) \
+node index.js
 ```
 - Your server is ready !
 

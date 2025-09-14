@@ -1,7 +1,6 @@
 const { existsSync, promises: fs } = require("fs");
 const { runCommand } = require("./utils");
 const DockerServer = require("./DockerServer");
-const os = require("os");
 const path = require("path");
 
 module.exports = class PythonServer extends DockerServer {
@@ -32,7 +31,7 @@ module.exports = class PythonServer extends DockerServer {
         this.setState("deploying");
         this.log("[AutoDeploy] Deploying...");
 
-        const serverDir = path.join(os.homedir(), "servers", this.name);
+        const serverDir = path.join("/servers", this.name);
         const tempDir = serverDir + "-temp";
 
         const rmrf = async (dir) => { if (existsSync(dir)) await fs.rm(dir, { recursive: true }); };

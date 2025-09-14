@@ -1,7 +1,6 @@
 const { existsSync, promises: fs } = require("fs");
 const { runCommand } = require("./utils");
 const Server = require("./Server");
-const os = require("os");
 const path = require("path");
 
 module.exports = class ReactJsServer extends Server {
@@ -25,8 +24,9 @@ module.exports = class ReactJsServer extends Server {
 
         console.log("Deploying " + this.name + "...");
 
-        const serverDir = path.join(os.homedir(), "servers", this.name);
+        const serverDir = path.join("/servers", this.name);
         const tempDir = serverDir + "-temp";
+        const hostTempDir = path.join(process.env.HOST_SERVERS_DIR_PATH, this.name + "-temp");
 
         const rmrf = async (dir) => { if (existsSync(dir)) await fs.rm(dir, { recursive: true }); };
 
@@ -57,7 +57,7 @@ module.exports = class ReactJsServer extends Server {
                     && await fs.readFile(path.join(tempDir, "package.json"), "utf8") === await fs.readFile(path.join(serverDir, "package.json"), "utf8"))
                     await runCommand(`cp -r ${path.join(serverDir, "node_modules")} ${tempDir}`);
                 else
-                    await runCommand(`docker run --rm -i --name ${this.name}-Deploy -v ${tempDir}:/home/server ${this.deployment.dockerImage} npm install${!this.deployment.installDev ? " --omit=dev" : ""}`);
+                    await runCommand(`docker run --rm -i --name ${this.name}-Deploy -v ${hostTempDir}:/home/server ${this.deployment.dockerImage} npm install${!this.deployment.installDev ? " --omit=dev" : ""}`);
             } catch (error) {
                 await onError(error);
                 return;
@@ -79,7 +79,7 @@ module.exports = class ReactJsServer extends Server {
         await rmrf(path.join(tempDir, "build"));
 
         try {
-            await runCommand(`docker run --rm -i --name ${this.name}-Deploy -v ${tempDir}:/home/server ${this.deployment.dockerImage} npm run build`);
+            await runCommand(`docker run --rm -i --name ${this.name}-Deploy -v ${hostTempDir}:/home/server ${this.deployment.dockerImage} npm run build`);
         } catch (error) {
             await onError(error);
             return;

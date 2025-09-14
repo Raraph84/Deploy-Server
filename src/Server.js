@@ -1,7 +1,6 @@
 const { existsSync, promises: fs } = require("fs");
 const { getConfig } = require("raraph84-lib");
 const Docker = require("dockerode");
-const os = require("os");
 const path = require("path");
 const config = getConfig(__dirname + "/..");
 
@@ -78,8 +77,8 @@ module.exports = class Server {
 
                 } else {
 
-                    if (!existsSync(path.join(os.homedir(), "servers", serverInfos.name)))
-                        await fs.mkdir(path.join(os.homedir(), "servers", serverInfos.name));
+                    if (!existsSync(path.join("/servers", serverInfos.name)))
+                        await fs.mkdir(path.join("/servers", serverInfos.name));
 
                     const exposedPorts = {};
                     const portBindings = {};
@@ -106,7 +105,7 @@ module.exports = class Server {
                         Tty: true,
                         OpenStdin: true,
                         HostConfig: {
-                            Binds: [path.join(os.homedir(), "servers", serverInfos.name) + ":/home/server", ...volumes],
+                            Binds: [path.join(process.env.HOST_SERVERS_DIR_PATH, serverInfos.name) + ":/home/server", ...volumes],
                             ...(serverInfos.ports ? { PortBindings: portBindings } : { NetworkMode: "host" }),
                             LogConfig: { Type: "json-file", Config: { "max-size": "5m", "max-file": "2" } }
                         },
@@ -130,7 +129,7 @@ module.exports = class Server {
                     ? new WebsiteServer(serverInfos.name, serverInfos.deployment ?? null)
                     : new ReactJsServer(serverInfos.name, serverInfos.deployment ?? null);
 
-                if (!existsSync(path.join(os.homedir(), "servers", serverInfos.name)))
+                if (!existsSync(path.join("/servers", serverInfos.name)))
                     server.deploy();
 
             } else

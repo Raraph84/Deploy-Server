@@ -1,7 +1,6 @@
 const { existsSync, promises: fs } = require("fs");
 const { runCommand } = require("./utils");
 const DockerServer = require("./DockerServer");
-const os = require("os");
 const path = require("path");
 
 module.exports = class NodeJsServer extends DockerServer {
@@ -32,8 +31,9 @@ module.exports = class NodeJsServer extends DockerServer {
         this.setState("deploying");
         this.log("[AutoDeploy] Deploying...");
 
-        const serverDir = path.join(os.homedir(), "servers", this.name);
+        const serverDir = path.join("/servers", this.name);
         const tempDir = serverDir + "-temp";
+        const hostTempDir = path.join(process.env.HOST_SERVERS_DIR_PATH, this.name + "-temp");
 
         const rmrf = async (dir) => { if (existsSync(dir)) await fs.rm(dir, { recursive: true }); };
 
@@ -68,7 +68,7 @@ module.exports = class NodeJsServer extends DockerServer {
                     && await fs.readFile(path.join(tempDir, "package.json"), "utf8") === await fs.readFile(path.join(serverDir, "package.json"), "utf8"))
                     await runCommand(`cp -r ${path.join(serverDir, "node_modules")} ${tempDir}`, (line) => this.log(line));
                 else
-                    await runCommand(`docker run --rm -i --name ${this.name}-Deploy -v ${tempDir}:/home/server ${this.dockerImage} npm install${!this.deployment.installDev ? " --omit=dev" : ""}`, (line) => this.log(line));
+                    await runCommand(`docker run --rm -i --name ${this.name}-Deploy -v ${hostTempDir}:/home/server ${this.dockerImage} npm install${!this.deployment.installDev ? " --omit=dev" : ""}`, (line) => this.log(line));
             } catch (error) {
                 await onError(error);
                 return;
@@ -89,7 +89,7 @@ module.exports = class NodeJsServer extends DockerServer {
 
         if (this.deployment.buildCommand) {
             try {
-                await runCommand(`docker run --rm -i --name ${this.name}-Deploy -v ${tempDir}:/home/server ${this.dockerImage} ${this.deployment.buildCommand}`, (line) => this.log(line));
+                await runCommand(`docker run --rm -i --name ${this.name}-Deploy -v ${hostTempDir}:/home/server ${this.dockerImage} ${this.deployment.buildCommand}`, (line) => this.log(line));
             } catch (error) {
                 await onError(error);
                 return;
