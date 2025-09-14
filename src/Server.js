@@ -113,6 +113,7 @@ module.exports = class Server {
                             ...(serverInfos.ports ? { PortBindings: portBindings } : { NetworkMode: "host" }),
                             LogConfig: { Type: "json-file", Config: { "max-size": "5m", "max-file": "2" } }
                         },
+                        User: process.getuid() + ":" + process.getgid(),
                         WorkingDir: "/home/server",
                         Env: Object.entries(serverInfos.environmentVariables ?? {}).map((environmentVariable) => environmentVariable[0] + "=" + environmentVariable[1]),
                         Image: serverInfos.dockerImage,
