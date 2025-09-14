@@ -68,7 +68,7 @@ module.exports = class NodeJsServer extends DockerServer {
                     && await fs.readFile(path.join(tempDir, "package.json"), "utf8") === await fs.readFile(path.join(serverDir, "package.json"), "utf8"))
                     await runCommand(`cp -r ${path.join(serverDir, "node_modules")} ${tempDir}`, (line) => this.log(line));
                 else
-                    await runCommand(`docker run --rm -i --name ${this.name}-Deploy -v ${hostTempDir}:/home/server ${this.dockerImage} npm install${!this.deployment.installDev ? " --omit=dev" : ""}`, (line) => this.log(line));
+                    await runCommand(`docker run --rm -i --name ${this.name}-Deploy -v ${hostTempDir}:/server --workdir /server ${this.dockerImage} npm install${!this.deployment.installDev ? " --omit=dev" : ""}`, (line) => this.log(line));
             } catch (error) {
                 await onError(error);
                 return;
@@ -89,7 +89,7 @@ module.exports = class NodeJsServer extends DockerServer {
 
         if (this.deployment.buildCommand) {
             try {
-                await runCommand(`docker run --rm -i --name ${this.name}-Deploy -v ${hostTempDir}:/home/server ${this.dockerImage} ${this.deployment.buildCommand}`, (line) => this.log(line));
+                await runCommand(`docker run --rm -i --name ${this.name}-Deploy -v ${hostTempDir}:/server --workdir /server ${this.dockerImage} ${this.deployment.buildCommand}`, (line) => this.log(line));
             } catch (error) {
                 await onError(error);
                 return;
