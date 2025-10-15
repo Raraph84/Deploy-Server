@@ -15,7 +15,6 @@ nano ~/deploy-server/config.json
 docker run -it --rm \
 --volume ~/deploy-server:/deploy-server \
 --workdir /deploy-server \
---env TZ=Europe/Paris \
 node npm install --omit=dev
 ```
 - Build the Docker NodeJS image for servers

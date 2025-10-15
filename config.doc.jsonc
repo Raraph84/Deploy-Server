@@ -59,7 +59,6 @@
         {
             "name": "My-ReactJs-Website",
             "type": "reactjs",
-            "buildDockerImage": "cnode:22", // DEPRECATED Use "deployment.dockerImage" instead
             "deployment": { // Optional
                 "dockerImage": "cnode:22",
                 "githubRepo": "Raraph84/Deploy-Server-Frontend",
@@ -67,26 +66,6 @@
                 "githubAuth": "ghp_MY_GITHUB_ACCESS_TOKEN", // Optional
                 "ignoredFiles": [], // Optional
                 "installDev": false // Optional
-            }
-        },
-        {
-            "name": "My-NextJs-Website",
-            "type": "nextjs", // DEPRECATED Use "nodejs" instead
-            "dockerImage": "cnode:22",
-            "startCommand": "npm run start", // Optional
-            "port": 8080, // DEPRECATED Use "ports" instead
-            "destPort": 80, // Optional - DEPRECATED Use "ports" instead
-            "ports": { // Optional
-                "8080": 80
-            },
-            "environmentVariables": {}, // Optional
-            "deployment": { // Optional
-                "buildCommand": "npm run build", // Optional
-                "installDev": false, // Optional
-                "githubRepo": "MyGitHubUser/MyNextJsWebsiteRepo",
-                "githubBranch": "dev",
-                "githubAuth": "ghp_MY_GITHUB_ACCESS_TOKEN", // Optional
-                "ignoredFiles": [] // Optional
             }
         }
     ]
