@@ -115,7 +115,12 @@ module.exports = class Server {
                         },
                         User: process.getuid() + ":" + process.getgid(),
                         WorkingDir: "/home/server",
-                        Env: Object.entries(serverInfos.environmentVariables ?? {}).map((environmentVariable) => environmentVariable[0] + "=" + environmentVariable[1]),
+                        Env: [
+                            "TZ=Europe/Paris",
+                            "HOME=/home/server",
+                            ...Object.entries(serverInfos.environmentVariables ?? {})
+                                .map((environmentVariable) => environmentVariable[0] + "=" + environmentVariable[1])
+                        ],
                         Image: serverInfos.dockerImage,
                         Cmd: serverInfos.type === "nodejs"
                             ? startCommand.split(" ")
