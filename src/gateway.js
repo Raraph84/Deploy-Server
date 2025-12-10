@@ -1,6 +1,8 @@
 const { getConfig, WebSocketServer } = require("raraph84-lib");
 const Server = require("./Server");
 const DockerServer = require("./DockerServer");
+const ReactJsServer = require("./ReactJsServer");
+const WebsiteServer = require("./WebsiteServer");
 const config = getConfig(__dirname + "/..");
 
 /** @param {import("raraph84-lib/src/WebSocketServer")} */
@@ -54,7 +56,7 @@ module.exports.start = async () => {
                 if (server instanceof DockerServer) {
                     client.emitEvent("SERVER", { id: server.id, name: server.name, type: server.type, state: server.state });
                     client.emitEvent("LOG", { serverId: server.id, logs: server.lastLogs });
-                } else if (server.constructor.name === "ReactJsServer") {
+                } else if (server instanceof ReactJsServer || server instanceof WebsiteServer) {
                     client.emitEvent("SERVER", { id: server.id, name: server.name, type: server.type });
                 }
             });
@@ -106,7 +108,7 @@ module.exports.start = async () => {
             } catch (error) {
                 client.close(error);
             }
-        } else if (server.constructor.name === "ReactJsServer") {
+        } else if (server instanceof ReactJsServer || server instanceof WebsiteServer) {
             if (command === "DEPLOY_SERVER") {
                 try {
                     server.deploy();
@@ -114,7 +116,7 @@ module.exports.start = async () => {
                     client.close(error);
                 }
             } else {
-                client.close("Only DEPLOY_SERVER is allowed for ReactJsServer");
+                client.close("Only DEPLOY_SERVER is allowed for ReactJsServer and WebsiteServer");
             }
         } else {
             client.close("This server type is not supported");
