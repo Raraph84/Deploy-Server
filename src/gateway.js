@@ -58,6 +58,9 @@ module.exports.start = async () => {
                     client.emitEvent("LOG", { serverId: server.id, logs: server.lastLogs });
                 } else if (server instanceof ReactJsServer || server instanceof WebsiteServer) {
                     client.emitEvent("SERVER", { id: server.id, name: server.name, type: server.type });
+                    if (server instanceof ReactJsServer) {
+                        client.emitEvent("LOG", { serverId: server.id, logs: server.lastLogs });
+                    }
                 }
             });
             return;
