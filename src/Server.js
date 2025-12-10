@@ -26,6 +26,24 @@ module.exports = class Server {
     }
 
     /**
+     * Ajoute une ligne de log à lastLogs
+     * @param {string} line
+     */
+    pushLog(line) {
+        if (line && typeof line === "string") this.lastLogs.push(line);
+    }
+
+    /**
+     * Gestion d'erreur (des déploiements)
+     * @param {string|Error} error
+     */
+    async onDeployError(error) {
+        this.deploying = false;
+        this.pushLog(`Error deploying ${this.name} : ${error}`);
+        console.log(`Error deploying ${this.name} :`, error);
+    }
+
+    /**
      * @param {import("raraph84-lib/src/WebSocketServer")} gateway 
      */
     static async init(gateway) {

@@ -20,42 +20,33 @@ module.exports = class ReactJsServer extends Server {
         if (!this.deployment || this.deploying) return;
         this.deploying = true;
         this.lastLogs = [];
-        const pushLog = (line) => {
-            if (line && typeof line === "string") this.lastLogs.push(line);
-        };
+        this.pushLog("Deploying " + this.name + "...");
         console.log("Deploying " + this.name + "...");
-        pushLog("Deploying " + this.name + "...");
         const serverDir = path.join("/servers", this.name);
         const tempDir = serverDir + "-temp";
         const hostTempDir = path.join(process.env.HOST_SERVERS_DIR_PATH, this.name + "-temp");
         const rmrf = async (dir) => { if (existsSync(dir)) await fs.rm(dir, { recursive: true }); };
-        const onError = async (error) => {
-            this.deploying = false;
-            pushLog("Error deploying " + this.name + " : " + error);
-            console.log("Error deploying " + this.name + " :", error);
-        };
         await rmrf(tempDir);
         if (existsSync(serverDir + "-old"))
             throw new Error("Old directory already exists !");
         try {
-            await runCommand(`git clone https://${this.deployment.githubAuth || "none"}@github.com/${this.deployment.githubRepo} -b ${this.deployment.githubBranch} ${tempDir}`, pushLog);
+            await runCommand(`git clone https://${this.deployment.githubAuth || "none"}@github.com/${this.deployment.githubRepo} -b ${this.deployment.githubBranch} ${tempDir}`, (line) => this.pushLog(line));
         } catch (error) {
-            await onError(error);
+            await this.onDeployError(error);
             return;
         }
         await rmrf(path.join(tempDir, ".git"));
         if (existsSync(path.join(tempDir, "package.json"))) {
             await rmrf(path.join(tempDir, "node_modules"));
-
             try {
                 if (existsSync(path.join(serverDir, "package.json")) && existsSync(path.join(serverDir, "node_modules"))
                     && await fs.readFile(path.join(tempDir, "package.json"), "utf8") === await fs.readFile(path.join(serverDir, "package.json"), "utf8")) {
-                    await runCommand(`cp -r ${path.join(serverDir, "node_modules")} ${tempDir}`, pushLog);
+                    await runCommand(`cp -r ${path.join(serverDir, "node_modules")} ${tempDir}`, (line) => this.pushLog(line));
                 } else {
-                    await runCommand(`docker run --rm -i --name ${this.name}-Deploy -u ${process.getuid()}:${process.getgid()} -v ${hostTempDir}:/server -e HOME=/tmp -w /server ${this.deployment.dockerImage} npm install${!this.deployment.installDev ? " --omit=dev" : ""}`, pushLog);
+                    await runCommand(`docker run --rm -i --name ${this.name}-Deploy -u ${process.getuid()}:${process.getgid()} -v ${hostTempDir}:/server -e HOME=/tmp -w /server ${this.deployment.dockerImage} npm install${!this.deployment.installDev ? " --omit=dev" : ""}`, (line) => this.pushLog(line));
                 }
             } catch (error) {
-                await onError(error);
+                await this.onDeployError(error);
                 return;
             }
         }
@@ -63,18 +54,18 @@ module.exports = class ReactJsServer extends Server {
             if (existsSync(path.join(serverDir, ignoredFile))) {
                 await rmrf(path.join(tempDir, ignoredFile));
                 try {
-                    await runCommand(`cp -r ${path.join(serverDir, ignoredFile)} ${tempDir}`, pushLog);
+                    await runCommand(`cp -r ${path.join(serverDir, ignoredFile)} ${tempDir}`, (line) => this.pushLog(line));
                 } catch (error) {
-                    await onError(error);
+                    await this.onDeployError(error);
                     return;
                 }
             }
         }
         await rmrf(path.join(tempDir, "build"));
         try {
-            await runCommand(`docker run --rm -i --name ${this.name}-Deploy -u ${process.getuid()}:${process.getgid()} -v ${hostTempDir}:/server -w /server ${this.deployment.dockerImage} npm run build`, pushLog);
+            await runCommand(`docker run --rm -i --name ${this.name}-Deploy -u ${process.getuid()}:${process.getgid()} -v ${hostTempDir}:/server -w /server ${this.deployment.dockerImage} npm run build`, (line) => this.pushLog(line));
         } catch (error) {
-            await onError(error);
+            await this.onDeployError(error);
             return;
         }
         await rmrf(path.join(tempDir, "www"));
@@ -83,7 +74,7 @@ module.exports = class ReactJsServer extends Server {
         await fs.rename(tempDir, serverDir);
         await rmrf(serverDir + "-old");
         this.deploying = false;
-        pushLog("Deployed " + this.name);
+        this.pushLog("Deployed " + this.name);
         console.log("Deployed " + this.name);
     }
 }
