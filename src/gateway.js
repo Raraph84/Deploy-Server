@@ -50,9 +50,14 @@ module.exports.start = async () => {
             client.metadata.logged = true;
             client.emitEvent("LOGGED");
 
-            Server.servers.filter((server) => server instanceof DockerServer).forEach((server) => {
-                client.emitEvent("SERVER", { id: server.id, name: server.name, type: server.type, state: server.state });
-                client.emitEvent("LOG", { serverId: server.id, logs: server.lastLogs });
+            // Envoie les serveurs Docker et ReactJsServer
+            Server.servers.forEach((server) => {
+                if (server instanceof DockerServer) {
+                    client.emitEvent("SERVER", { id: server.id, name: server.name, type: server.type, state: server.state });
+                    client.emitEvent("LOG", { serverId: server.id, logs: server.lastLogs });
+                } else if (server.constructor.name === "ReactJsServer") {
+                    client.emitEvent("SERVER", { id: server.id, name: server.name, type: server.type });
+                }
             });
             return;
         }
@@ -89,9 +94,33 @@ module.exports.start = async () => {
             return;
         }
 
-        if (!(server instanceof DockerServer)) {
-            client.close("This server is not a Docker server");
-            return;
+
+        // Gestion des commandes selon le type de serveur
+        if (server instanceof DockerServer) {
+            try {
+                if (command === "START_SERVER")
+                    server.start();
+                else if (command === "STOP_SERVER")
+                    server.stop();
+                else if (command === "RESTART_SERVER")
+                    server.restart();
+                else if (command === "DEPLOY_SERVER")
+                    server.deploy();
+            } catch (error) {
+                client.close(error);
+            }
+        } else if (server.constructor.name === "ReactJsServer") {
+            if (command === "DEPLOY_SERVER") {
+                try {
+                    server.deploy();
+                } catch (error) {
+                    client.close(error);
+                }
+            } else {
+                client.close("Only DEPLOY_SERVER is allowed for ReactJsServer");
+            }
+        } else {
+            client.close("This server type is not supported");
         }
 
         try {
