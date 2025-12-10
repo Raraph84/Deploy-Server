@@ -6,6 +6,8 @@ const { runCommand } = require("./utils");
 const config = getConfig(__dirname + "/..");
 
 module.exports = class Server {
+    /** @type {import("raraph84-lib/src/WebSocketServer") | undefined} */
+    #gateway;
 
     /** @type {Server[]} */
     static servers = [];
@@ -26,11 +28,17 @@ module.exports = class Server {
     }
 
     /**
-     * Adds a log line to the server's logs
+     * Adds a log line to the server's logs and emits it to clients if possible
      * @param {string} line
+     * @param {number} [date]
      */
-    pushLog(line) {
-        if (line && typeof line === "string") this.lastLogs.push(line);
+    log(line, date = Date.now()) {
+        const log = { line, date };
+        this.lastLogs.push(log);
+        if (this.lastLogs.length > 500) this.lastLogs.shift();
+        if (this.#gateway && typeof this.#gateway.clients === "object") {
+            this.#gateway.clients.filter((client) => client.metadata.logged).forEach((client) => client.emitEvent("LOG", { serverId: this.id, logs: [log] }));
+        }
     }
 
     /**

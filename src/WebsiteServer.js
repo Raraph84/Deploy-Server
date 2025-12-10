@@ -23,7 +23,7 @@ module.exports = class WebsiteServer extends Server {
 
         this.deploying = true;
 
-        this.pushLog("Deploying " + this.name + "...");
+        this.log("Deploying " + this.name + "...");
         console.log("Deploying " + this.name + "...");
 
         const serverDir = path.join("/servers", this.name);
@@ -35,7 +35,7 @@ module.exports = class WebsiteServer extends Server {
             throw new Error("Old directory already exists !");
 
         try {
-            await runCommand(`git clone https://${this.deployment.githubAuth || "none"}@github.com/${this.deployment.githubRepo} -b ${this.deployment.githubBranch} ${tempDir}`, (line) => this.pushLog(line));
+            await runCommand(`git clone https://${this.deployment.githubAuth || "none"}@github.com/${this.deployment.githubRepo} -b ${this.deployment.githubBranch} ${tempDir}`, (line) => this.log(line));
         } catch (error) {
             await this.onDeployError(error);
             return;
@@ -47,7 +47,7 @@ module.exports = class WebsiteServer extends Server {
             if (existsSync(path.join(serverDir, ignoredFile))) {
                 await rmrf(path.join(tempDir, ignoredFile));
                 try {
-                    await runCommand(`cp -r ${path.join(serverDir, ignoredFile)} ${tempDir}`, (line) => this.pushLog(line));
+                    await runCommand(`cp -r ${path.join(serverDir, ignoredFile)} ${tempDir}`, (line) => this.log(line));
                 } catch (error) {
                     await this.onDeployError(error);
                     return;
@@ -60,7 +60,7 @@ module.exports = class WebsiteServer extends Server {
         await rmrf(serverDir + "-old");
 
         this.deploying = false;
-        this.pushLog("Deployed " + this.name);
+        this.log("Deployed " + this.name);
         console.log("Deployed " + this.name);
     }
 }
