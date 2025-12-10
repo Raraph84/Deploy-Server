@@ -26,7 +26,7 @@ module.exports = class Server {
     }
 
     /**
-     * Ajoute une ligne de log à lastLogs
+     * Adds a log line to the server's logs
      * @param {string} line
      */
     pushLog(line) {
@@ -34,7 +34,7 @@ module.exports = class Server {
     }
 
     /**
-     * Gestion d'erreur (des déploiements)
+     * Handles deployment errors
      * @param {string|Error} error
      */
     async onDeployError(error) {
