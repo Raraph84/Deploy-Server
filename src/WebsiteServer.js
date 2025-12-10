@@ -22,7 +22,6 @@ module.exports = class WebsiteServer extends Server {
         if (!this.deployment || this.deploying) return;
 
         this.deploying = true;
-        this.lastLogs = [];
 
         this.pushLog("Deploying " + this.name + "...");
         console.log("Deploying " + this.name + "...");
