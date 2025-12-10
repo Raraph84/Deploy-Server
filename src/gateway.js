@@ -119,19 +119,6 @@ module.exports.start = async () => {
         } else {
             client.close("This server type is not supported");
         }
-
-        try {
-            if (command === "START_SERVER")
-                server.start();
-            else if (command === "STOP_SERVER")
-                server.stop();
-            else if (command === "RESTART_SERVER")
-                server.restart();
-            else if (command === "DEPLOY_SERVER")
-                server.deploy();
-        } catch (error) {
-            client.close(error);
-        }
     });
 
     console.log("Lancement du serveur WebSocket...");
