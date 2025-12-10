@@ -12,29 +12,38 @@ module.exports = class WebsiteServer extends Server {
 
     constructor(name, deployment) {
         super(name);
+
         this.type = "website";
         this.deployment = deployment;
     }
 
     async deploy() {
+
         if (!this.deployment || this.deploying) return;
+
         this.deploying = true;
         this.lastLogs = [];
+
         this.pushLog("Deploying " + this.name + "...");
         console.log("Deploying " + this.name + "...");
+
         const serverDir = path.join("/servers", this.name);
         const tempDir = serverDir + "-temp";
+
         const rmrf = async (dir) => { if (existsSync(dir)) await fs.rm(dir, { recursive: true }); };
         await rmrf(tempDir);
         if (existsSync(serverDir + "-old"))
             throw new Error("Old directory already exists !");
+
         try {
             await runCommand(`git clone https://${this.deployment.githubAuth || "none"}@github.com/${this.deployment.githubRepo} -b ${this.deployment.githubBranch} ${tempDir}`, (line) => this.pushLog(line));
         } catch (error) {
             await this.onDeployError(error);
             return;
         }
+
         await rmrf(path.join(tempDir, ".git"));
+
         for (const ignoredFile of (this.deployment.ignoredFiles || [])) {
             if (existsSync(path.join(serverDir, ignoredFile))) {
                 await rmrf(path.join(tempDir, ignoredFile));
@@ -46,9 +55,11 @@ module.exports = class WebsiteServer extends Server {
                 }
             }
         }
+
         if (existsSync(serverDir)) await fs.rename(serverDir, serverDir + "-old");
         await fs.rename(tempDir, serverDir);
         await rmrf(serverDir + "-old");
+
         this.deploying = false;
         this.pushLog("Deployed " + this.name);
         console.log("Deployed " + this.name);
