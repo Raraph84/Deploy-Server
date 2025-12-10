@@ -9,7 +9,6 @@ module.exports = class ReactJsServer extends Server {
      * @param {string} name 
      * @param {object} deployment 
      */
-
     constructor(name, deployment) {
         super(name);
 
