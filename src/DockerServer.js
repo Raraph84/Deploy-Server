@@ -17,8 +17,6 @@ module.exports = class DockerServer extends Server {
 
         this.container = container;
         this.dockerImage = dockerImage;
-        /** @type {object[]} */
-        this.lastLogs = [];
         /** @type {import("raraph84-lib/src/DockerLogsListener")} */
         this.logsListener = null;
         /** @type {"stopped"|"stopping"|"starting"|"started"|"restarting"|"deploying"} */

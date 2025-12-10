@@ -14,7 +14,6 @@ module.exports = class WebsiteServer extends Server {
         super(name);
         this.type = "website";
         this.deployment = deployment;
-        this.lastLogs = [];
     }
 
     async deploy() {

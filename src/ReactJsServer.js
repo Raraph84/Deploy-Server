@@ -14,7 +14,6 @@ module.exports = class ReactJsServer extends Server {
         super(name);
         this.type = "reactjs";
         this.deployment = deployment;
-        this.lastLogs = [];
     }
 
     async deploy() {

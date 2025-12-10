@@ -19,6 +19,8 @@ module.exports = class Server {
         this.name = name;
         this.type = "unknown";
         this.deploying = false;
+        /** @type {object[]} */
+        this.lastLogs = [];
 
         Server.servers.push(this);
     }
