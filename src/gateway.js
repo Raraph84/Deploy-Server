@@ -50,7 +50,6 @@ module.exports.start = async () => {
             client.metadata.logged = true;
             client.emitEvent("LOGGED");
 
-            // Envoie les serveurs Docker et ReactJsServer
             Server.servers.forEach((server) => {
                 if (server instanceof DockerServer) {
                     client.emitEvent("SERVER", { id: server.id, name: server.name, type: server.type, state: server.state });
@@ -94,8 +93,6 @@ module.exports.start = async () => {
             return;
         }
 
-
-        // Gestion des commandes selon le type de serveur
         if (server instanceof DockerServer) {
             try {
                 if (command === "START_SERVER")
