@@ -78,7 +78,6 @@ module.exports = class PythonServer extends DockerServer {
         if (existsSync(serverDir)) await fs.rename(serverDir, serverDir + "-old");
         await fs.rename(tempDir, serverDir);
 
-        this.lastLogs = [];
         await this.container.start();
 
         await rmrf(serverDir + "-old");

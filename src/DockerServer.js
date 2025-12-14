@@ -3,7 +3,6 @@ const Server = require("./Server");
 
 module.exports = class DockerServer extends Server {
 
-    #gateway;
 
     /**
      * @param {string} name 
@@ -17,23 +16,15 @@ module.exports = class DockerServer extends Server {
 
         this.container = container;
         this.dockerImage = dockerImage;
-        /** @type {object[]} */
-        this.lastLogs = [];
         /** @type {import("raraph84-lib/src/DockerLogsListener")} */
         this.logsListener = null;
         /** @type {"stopped"|"stopping"|"starting"|"started"|"restarting"|"deploying"} */
         this.state = "stopped";
 
-        this.#gateway = gateway;
-
-        this.#gateway.clients.filter((client) => client.metadata.logged).forEach((client) => client.emitEvent("SERVER", { id: this.id, name: this.name, type: this.type, state: this.state }));
-    }
-
-    log(line, date = Date.now()) {
-        const log = { line, date };
-        this.lastLogs.push(log);
-        if (this.lastLogs.length > 500) this.lastLogs.shift();
-        this.#gateway.clients.filter((client) => client.metadata.logged).forEach((client) => client.emitEvent("LOG", { serverId: this.id, logs: [log] }));
+        this._gateway = gateway;
+        if (this._gateway && typeof this._gateway.clients === "object") {
+            this._gateway.clients.filter((client) => client.metadata.logged).forEach((client) => client.emitEvent("SERVER", { id: this.id, name: this.name, type: this.type, state: this.state }));
+        }
     }
 
     listenLogs() {
@@ -51,7 +42,9 @@ module.exports = class DockerServer extends Server {
 
     setState(state) {
         this.state = state;
-        this.#gateway.clients.filter((client) => client.metadata.logged).forEach((client) => client.emitEvent("SERVER_STATE", { serverId: this.id, state: this.state }));
+        if (this._gateway && typeof this._gateway.clients === "object") {
+            this._gateway.clients.filter((client) => client.metadata.logged).forEach((client) => client.emitEvent("SERVER_STATE", { serverId: this.id, state: this.state }));
+        }
     }
 
     async start() {

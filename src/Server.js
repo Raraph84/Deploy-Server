@@ -6,6 +6,8 @@ const { runCommand } = require("./utils");
 const config = getConfig(__dirname + "/..");
 
 module.exports = class Server {
+    /** @type {import("raraph84-lib/src/WebSocketServer") | undefined} */
+    #gateway;
 
     /** @type {Server[]} */
     static servers = [];
@@ -19,8 +21,34 @@ module.exports = class Server {
         this.name = name;
         this.type = "unknown";
         this.deploying = false;
+        /** @type {object[]} */
+        this.lastLogs = [];
 
         Server.servers.push(this);
+    }
+
+    /**
+     * Adds a log line to the server's logs and emits it to clients if possible
+     * @param {string} line
+     * @param {number} [date]
+     */
+    log(line, date = Date.now()) {
+        const log = { line, date };
+        this.lastLogs.push(log);
+        if (this.lastLogs.length > 500) this.lastLogs.shift();
+        if (this.#gateway && typeof this.#gateway.clients === "object") {
+            this.#gateway.clients.filter((client) => client.metadata.logged).forEach((client) => client.emitEvent("LOG", { serverId: this.id, logs: [log] }));
+        }
+    }
+
+    /**
+     * Handles deployment errors
+     * @param {string|Error} error
+     */
+    async onDeployError(error) {
+        this.deploying = false;
+        this.pushLog(`Error deploying ${this.name} : ${error}`);
+        console.log(`Error deploying ${this.name} :`, error);
     }
 
     /**
