@@ -6,8 +6,8 @@
   "author": "Raraph84",
   "license": "MIT",
   "dependencies": {
-    "dockerode": "^4.0.2",
+    "dockerode": "^4.0.9",
     "ftp-srv": "^4.6.3",
-    "raraph84-lib": "^2.19.0"
+    "raraph84-lib": "^2.21.0"
   }
 }
