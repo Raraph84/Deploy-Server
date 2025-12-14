@@ -37,15 +37,6 @@ module.exports = class NodeJsServer extends DockerServer {
 
         const rmrf = async (dir) => { if (existsSync(dir)) await fs.rm(dir, { recursive: true }); };
 
-        const onError = async (error) => {
-
-            this.deploying = false;
-
-            console.log("Error deploying " + this.name + " :", error);
-            this.log("[AutoDeploy] Error while deploying !");
-            this.setState(oldState);
-        };
-
         await rmrf(tempDir);
         if (existsSync(serverDir + "-old"))
             throw new Error("Old directory already exists !");
@@ -53,8 +44,7 @@ module.exports = class NodeJsServer extends DockerServer {
         try {
             await runCommand(`git clone https://${this.deployment.githubAuth || "none"}@github.com/${this.deployment.githubRepo} -b ${this.deployment.githubBranch} ${tempDir}`, (line) => this.log(line));
         } catch (error) {
-            await onError(error);
-            return;
+            return this.onDeployError(error, oldState);
         }
 
         await rmrf(path.join(tempDir, ".git"));
@@ -70,8 +60,7 @@ module.exports = class NodeJsServer extends DockerServer {
                 else
                     await runCommand(`docker run --rm -i --name ${this.name}-Deploy -u ${process.getuid()}:${process.getgid()} -v ${hostTempDir}:/server -e HOME=/tmp -w /server ${this.dockerImage} npm install${!this.deployment.installDev ? " --omit=dev" : ""}`, (line) => this.log(line));
             } catch (error) {
-                await onError(error);
-                return;
+                return this.onDeployError(error, oldState);
             }
         }
 
@@ -81,8 +70,7 @@ module.exports = class NodeJsServer extends DockerServer {
                 try {
                     await runCommand(`cp -r ${path.join(serverDir, ignoredFile)} ${tempDir}`, (line) => this.log(line));
                 } catch (error) {
-                    await onError(error);
-                    return;
+                    return this.onDeployError(error, oldState);
                 }
             }
         }
@@ -91,8 +79,7 @@ module.exports = class NodeJsServer extends DockerServer {
             try {
                 await runCommand(`docker run --rm -i --name ${this.name}-Deploy -u ${process.getuid()}:${process.getgid()} -v ${hostTempDir}:/server -w /server ${this.dockerImage} ${this.deployment.buildCommand}`, (line) => this.log(line));
             } catch (error) {
-                await onError(error);
-                return;
+                return this.onDeployError(error, oldState);
             }
         }
 

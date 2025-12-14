@@ -1,8 +1,6 @@
 const { getConfig, WebSocketServer } = require("raraph84-lib");
 const Server = require("./Server");
 const DockerServer = require("./DockerServer");
-const ReactJsServer = require("./ReactJsServer");
-const WebsiteServer = require("./WebsiteServer");
 const config = getConfig(__dirname + "/..");
 
 /** @param {import("raraph84-lib/src/WebSocketServer")} */
@@ -91,7 +89,7 @@ module.exports.start = async () => {
             return;
         }
 
-        if (!(Server instanceof DockerServer) && command !== "DEPLOY_SERVER") {
+        if (!(server instanceof DockerServer) && command !== "DEPLOY_SERVER") {
             client.close("This command is not available for this server");
             return;
         }

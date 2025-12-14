@@ -25,8 +25,8 @@ module.exports = class ReactJsServer extends Server {
         if (!this.deployment || this.deploying) return;
         this.deploying = true;
 
-        this.log("Deploying " + this.name + "...");
         console.log("Deploying " + this.name + "...");
+        this.log("[AutoDeploy] Deploying...");
 
         const serverDir = path.join("/servers", this.name);
         const tempDir = serverDir + "-temp";
@@ -41,8 +41,7 @@ module.exports = class ReactJsServer extends Server {
         try {
             await runCommand(`git clone https://${this.deployment.githubAuth || "none"}@github.com/${this.deployment.githubRepo} -b ${this.deployment.githubBranch} ${tempDir}`, (line) => this.log(line));
         } catch (error) {
-            await this.onDeployError(error);
-            return;
+            return this.onDeployError(error);
         }
 
         await rmrf(path.join(tempDir, ".git"));
@@ -58,8 +57,7 @@ module.exports = class ReactJsServer extends Server {
                 else
                     await runCommand(`docker run --rm -i --name ${this.name}-Deploy -u ${process.getuid()}:${process.getgid()} -v ${hostTempDir}:/server -e HOME=/tmp -w /server ${this.deployment.dockerImage} npm install${!this.deployment.installDev ? " --omit=dev" : ""}`, (line) => this.log(line));
             } catch (error) {
-                await this.onDeployError(error);
-                return;
+                return this.onDeployError(error);
             }
         }
 
@@ -69,8 +67,7 @@ module.exports = class ReactJsServer extends Server {
                 try {
                     await runCommand(`cp -r ${path.join(serverDir, ignoredFile)} ${tempDir}`, (line) => this.log(line));
                 } catch (error) {
-                    await this.onDeployError(error);
-                    return;
+                    return this.onDeployError(error);
                 }
             }
         }
@@ -80,8 +77,7 @@ module.exports = class ReactJsServer extends Server {
         try {
             await runCommand(`docker run --rm -i --name ${this.name}-Deploy -u ${process.getuid()}:${process.getgid()} -v ${hostTempDir}:/server -w /server ${this.deployment.dockerImage} npm run build`, (line) => this.log(line));
         } catch (error) {
-            await this.onDeployError(error);
-            return;
+            return this.onDeployError(error);
         }
 
         await rmrf(path.join(tempDir, "www"));

@@ -43,7 +43,7 @@ module.exports = class Server {
      * Handles deployment errors
      * @param {string|Error} error
      */
-    async onDeployError(error) {
+    onDeployError(error) {
         this.deploying = false;
         console.log("Error deploying " + this.name + " :", error);
         this.log("[AutoDeploy] Error while deploying !");

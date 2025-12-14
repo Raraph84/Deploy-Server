@@ -23,6 +23,11 @@ module.exports = class DockerServer extends Server {
         this._gateway.clients.filter((client) => client.metadata.logged).forEach((client) => client.emitEvent("SERVER", { id: this.id, name: this.name, type: this.type, state: this.state }));
     }
 
+    onDeployError(error, oldState) {
+        super.onDeployError(error);
+        this.setState(oldState);
+    }
+
     listenLogs() {
         this.logsListener = new DockerLogsListener(this.container);
         this.logsListener.on("output", (output, date) => {
