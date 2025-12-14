@@ -8,9 +8,11 @@ module.exports = class ReactJsServer extends Server {
     /**
      * @param {string} name 
      * @param {object} deployment 
+     * @param {import("raraph84-lib/src/WebSocketServer")} gateway 
      */
-    constructor(name, deployment) {
-        super(name);
+    constructor(name, deployment, gateway) {
+
+        super(name, gateway);
 
         this.type = "reactjs";
         this.deployment = deployment;
@@ -91,6 +93,7 @@ module.exports = class ReactJsServer extends Server {
         await fs.rename(tempDir, serverDir);
         await rmrf(serverDir + "-old");
 
+        this.lastLogs = [];
         this.deploying = false;
         this.log("Deployed " + this.name);
         console.log("Deployed " + this.name);

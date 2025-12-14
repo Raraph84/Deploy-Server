@@ -3,7 +3,6 @@ const Server = require("./Server");
 
 module.exports = class DockerServer extends Server {
 
-
     /**
      * @param {string} name 
      * @param {import("dockerode").Container} container 
@@ -12,7 +11,7 @@ module.exports = class DockerServer extends Server {
      */
     constructor(name, container, gateway, dockerImage) {
 
-        super(name);
+        super(name, gateway);
 
         this.container = container;
         this.dockerImage = dockerImage;
@@ -21,10 +20,7 @@ module.exports = class DockerServer extends Server {
         /** @type {"stopped"|"stopping"|"starting"|"started"|"restarting"|"deploying"} */
         this.state = "stopped";
 
-        this._gateway = gateway;
-        if (this._gateway && typeof this._gateway.clients === "object") {
-            this._gateway.clients.filter((client) => client.metadata.logged).forEach((client) => client.emitEvent("SERVER", { id: this.id, name: this.name, type: this.type, state: this.state }));
-        }
+        this._gateway.clients.filter((client) => client.metadata.logged).forEach((client) => client.emitEvent("SERVER", { id: this.id, name: this.name, type: this.type, state: this.state }));
     }
 
     listenLogs() {

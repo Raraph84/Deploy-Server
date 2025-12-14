@@ -91,31 +91,22 @@ module.exports.start = async () => {
             return;
         }
 
-        if (server instanceof DockerServer) {
-            try {
-                if (command === "START_SERVER")
-                    server.start();
-                else if (command === "STOP_SERVER")
-                    server.stop();
-                else if (command === "RESTART_SERVER")
-                    server.restart();
-                else if (command === "DEPLOY_SERVER")
-                    server.deploy();
-            } catch (error) {
-                client.close(error);
-            }
-        } else if (server instanceof ReactJsServer || server instanceof WebsiteServer) {
-            if (command === "DEPLOY_SERVER") {
-                try {
-                    server.deploy();
-                } catch (error) {
-                    client.close(error);
-                }
-            } else {
-                client.close("Only DEPLOY_SERVER is allowed for ReactJsServer and WebsiteServer");
-            }
-        } else {
-            client.close("This server type is not supported");
+        if (!(Server instanceof DockerServer) && command !== "DEPLOY_SERVER") {
+            client.close("This command is not available for this server");
+            return;
+        }
+
+        try {
+            if (command === "START_SERVER")
+                server.start();
+            else if (command === "STOP_SERVER")
+                server.stop();
+            else if (command === "RESTART_SERVER")
+                server.restart();
+            else if (command === "DEPLOY_SERVER")
+                server.deploy();
+        } catch (error) {
+            client.close(error);
         }
     });
 

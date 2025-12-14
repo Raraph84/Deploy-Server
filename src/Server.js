@@ -6,23 +6,23 @@ const { runCommand } = require("./utils");
 const config = getConfig(__dirname + "/..");
 
 module.exports = class Server {
-    /** @type {import("raraph84-lib/src/WebSocketServer") | undefined} */
-    #gateway;
 
     /** @type {Server[]} */
     static servers = [];
 
     /**
      * @param {string} name 
+     * @param {import("raraph84-lib/src/WebSocketServer")} gateway 
      */
-    constructor(name) {
+    constructor(name, gateway) {
 
         this.id = Server.servers.length;
         this.name = name;
         this.type = "unknown";
         this.deploying = false;
-        /** @type {object[]} */
+        /** @type {{ line: string, date: number }[]} */
         this.lastLogs = [];
+        this._gateway = gateway;
 
         Server.servers.push(this);
     }
@@ -36,9 +36,7 @@ module.exports = class Server {
         const log = { line, date };
         this.lastLogs.push(log);
         if (this.lastLogs.length > 500) this.lastLogs.shift();
-        if (this.#gateway && typeof this.#gateway.clients === "object") {
-            this.#gateway.clients.filter((client) => client.metadata.logged).forEach((client) => client.emitEvent("LOG", { serverId: this.id, logs: [log] }));
-        }
+        this._gateway.clients.filter((client) => client.metadata.logged).forEach((client) => client.emitEvent("LOG", { serverId: this.id, logs: [log] }));
     }
 
     /**
@@ -164,8 +162,8 @@ module.exports = class Server {
             } else if (serverInfos.type === "website" || serverInfos.type === "reactjs") {
 
                 const server = serverInfos.type === "website"
-                    ? new WebsiteServer(serverInfos.name, serverInfos.deployment ?? null)
-                    : new ReactJsServer(serverInfos.name, serverInfos.deployment ?? null);
+                    ? new WebsiteServer(serverInfos.name, serverInfos.deployment ?? null, gateway)
+                    : new ReactJsServer(serverInfos.name, serverInfos.deployment ?? null, gateway);
 
                 if (!existsSync(path.join("/servers", serverInfos.name)))
                     server.deploy();
