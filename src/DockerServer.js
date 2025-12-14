@@ -38,9 +38,7 @@ module.exports = class DockerServer extends Server {
 
     setState(state) {
         this.state = state;
-        if (this._gateway && typeof this._gateway.clients === "object") {
-            this._gateway.clients.filter((client) => client.metadata.logged).forEach((client) => client.emitEvent("SERVER_STATE", { serverId: this.id, state: this.state }));
-        }
+        this._gateway.clients.filter((client) => client.metadata.logged).forEach((client) => client.emitEvent("SERVER_STATE", { serverId: this.id, state: this.state }));
     }
 
     async start() {

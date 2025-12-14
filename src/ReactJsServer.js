@@ -16,6 +16,8 @@ module.exports = class ReactJsServer extends Server {
 
         this.type = "reactjs";
         this.deployment = deployment;
+
+        this._gateway.clients.filter((client) => client.metadata.logged).forEach((client) => client.emitEvent("SERVER", { id: this.id, name: this.name, type: this.type }));
     }
 
     async deploy() {
@@ -51,14 +53,10 @@ module.exports = class ReactJsServer extends Server {
 
             try {
                 if (existsSync(path.join(serverDir, "package.json")) && existsSync(path.join(serverDir, "node_modules"))
-                    && await fs.readFile(path.join(tempDir, "package.json"), "utf8") === await fs.readFile(path.join(serverDir, "package.json"), "utf8")) {
-
+                    && await fs.readFile(path.join(tempDir, "package.json"), "utf8") === await fs.readFile(path.join(serverDir, "package.json"), "utf8"))
                     await runCommand(`cp -r ${path.join(serverDir, "node_modules")} ${tempDir}`, (line) => this.log(line));
-
-                } else {
+                else
                     await runCommand(`docker run --rm -i --name ${this.name}-Deploy -u ${process.getuid()}:${process.getgid()} -v ${hostTempDir}:/server -e HOME=/tmp -w /server ${this.deployment.dockerImage} npm install${!this.deployment.installDev ? " --omit=dev" : ""}`, (line) => this.log(line));
-                }
-
             } catch (error) {
                 await this.onDeployError(error);
                 return;

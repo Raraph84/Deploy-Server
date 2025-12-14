@@ -45,8 +45,8 @@ module.exports = class Server {
      */
     async onDeployError(error) {
         this.deploying = false;
-        this.pushLog(`Error deploying ${this.name} : ${error}`);
-        console.log(`Error deploying ${this.name} :`, error);
+        console.log("Error deploying " + this.name + " :", error);
+        this.log("[AutoDeploy] Error while deploying !");
     }
 
     /**

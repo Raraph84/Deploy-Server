@@ -16,6 +16,8 @@ module.exports = class WebsiteServer extends Server {
 
         this.type = "website";
         this.deployment = deployment;
+
+        this._gateway.clients.filter((client) => client.metadata.logged).forEach((client) => client.emitEvent("SERVER", { id: this.id, name: this.name, type: this.type }));
     }
 
     async deploy() {
