@@ -101,7 +101,7 @@ module.exports = class Server {
                         server.listenLogs();
                         server.setState("started");
                     } else {
-                        server.deploy();
+                        server.start();
                     }
 
                 } else {
