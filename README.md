@@ -39,8 +39,6 @@ docker run -itd \
 --workdir /deploy-server \
 --env TZ=Europe/Paris \
 --restart unless-stopped \
---user $(id -u):$(id -g) \
---group-add $(getent group docker | cut -d: -f3) \
 node index.js
 ```
 - Your server is ready !
