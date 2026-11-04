@@ -34,9 +34,7 @@ module.exports = class PythonServer extends DockerServer {
         const serverDir = path.join("/servers", this.name);
         const tempDir = serverDir + "-temp";
 
-        const rmrf = async (dir) => { if (existsSync(dir)) await fs.rm(dir, { recursive: true }); };
-
-        await rmrf(tempDir);
+        await fs.rm(tempDir, { recursive: true, force: true });
         if (existsSync(serverDir + "-old"))
             throw new Error("Old directory already exists !");
 
@@ -46,11 +44,11 @@ module.exports = class PythonServer extends DockerServer {
             return this.onDeployError(error, oldState);
         }
 
-        await rmrf(path.join(tempDir, ".git"));
+        await fs.rm(path.join(tempDir, ".git"), { recursive: true, force: true });
 
         for (const ignoredFile of (this.deployment.ignoredFiles || [])) {
             if (existsSync(path.join(serverDir, ignoredFile))) {
-                await rmrf(path.join(tempDir, ignoredFile));
+                await fs.rm(path.join(tempDir, ignoredFile), { recursive: true, force: true });
                 try {
                     await runCommand(`cp -r ${path.join(serverDir, ignoredFile)} ${tempDir}`, (line) => this.log(line));
                 } catch (error) {
@@ -70,7 +68,7 @@ module.exports = class PythonServer extends DockerServer {
         this.lastLogs = [];
         await this.container.start();
 
-        await rmrf(serverDir + "-old");
+        await fs.rm(serverDir + "-old", { recursive: true, force: true });
 
         this.deploying = false;
         console.log("Deployed " + this.name);
