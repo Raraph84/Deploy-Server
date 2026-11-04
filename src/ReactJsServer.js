@@ -80,9 +80,6 @@ module.exports = class ReactJsServer extends Server {
             return this.onDeployError(error);
         }
 
-        await rmrf(path.join(tempDir, "www"));
-        await fs.rename(path.join(tempDir, "build"), path.join(tempDir, "www"));
-
         if (existsSync(serverDir)) await fs.rename(serverDir, serverDir + "-old");
         await fs.rename(tempDir, serverDir);
         await rmrf(serverDir + "-old");
