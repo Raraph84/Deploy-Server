@@ -32,17 +32,19 @@ module.exports = class ReactJsServer extends Server {
         const tempDir = serverDir + "-temp";
         const hostTempDir = path.join(process.env.HOST_SERVERS_DIR_PATH, this.name + "-temp");
 
+        await fs.rm(serverDir + "-clone", { recursive: true, force: true });
         await fs.rm(tempDir, { recursive: true, force: true });
         if (existsSync(serverDir + "-old"))
             throw new Error("Old directory already exists !");
 
         try {
-            await runCommand(`git clone https://${this.deployment.githubAuth || "none"}@github.com/${this.deployment.githubRepo} -b ${this.deployment.githubBranch} ${tempDir}`, (line) => this.log(line));
+            await runCommand(`git clone https://${this.deployment.githubAuth || "none"}@github.com/${this.deployment.githubRepo} -b ${this.deployment.githubBranch} ${serverDir + "-clone"}`, (line) => this.log(line));
         } catch (error) {
             return this.onDeployError(error);
         }
 
-        await fs.rm(path.join(tempDir, ".git"), { recursive: true, force: true });
+        await fs.rm(path.join(serverDir + "-clone", ".git"), { recursive: true, force: true });
+        await fs.rename(path.join(serverDir + "-clone", this.deployment.sourceDir ?? "."), tempDir);
 
         if (existsSync(path.join(tempDir, "package.json"))) {
 
